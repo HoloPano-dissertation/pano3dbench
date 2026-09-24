@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from benchmark_toolbox.config import load_experiment_config
+from benchmark_toolbox.config import ExperimentConfig
 from benchmark_toolbox.datasets import BaseDatasetLoader
 from benchmark_toolbox.evaluator import Evaluator
 from benchmark_toolbox.metrics import BaseMetric
@@ -12,7 +12,7 @@ from benchmark_toolbox.models import BaseSceneEstimator
 class EvaluatorSmokeTest(unittest.TestCase):
     def test_example_pipeline(self) -> None:
         repository_root = Path(__file__).resolve().parents[1]
-        config = load_experiment_config(
+        config = ExperimentConfig.fromfile(
             repository_root / "configs/examples/smoke.json"
         )
         with tempfile.TemporaryDirectory() as temporary_dir:

@@ -9,17 +9,8 @@ description = "Extensible benchmark toolbox for holistic indoor scene understand
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [
-  { name = "Benchmark Toolbox contributors" }
-]
-dependencies = [
-  "PyYAML>=6.0",
-]
-
-[project.optional-dependencies]
-dev = [
-  "pytest>=8.0",
-]
+authors = [{ name = "Benchmark Toolbox contributors" }]
+dependencies = ["numpy>=2.0.2", "pillow>=11.3.0"]
 
 [project.scripts]
 benchmark-toolbox = "benchmark_toolbox.cli:main"
@@ -28,9 +19,46 @@ benchmark-toolbox = "benchmark_toolbox.cli:main"
 Repository = "https://github.com/HoloPano-dissertation/benchmark-toolbox"
 Documentation = "https://github.com/HoloPano-dissertation/benchmark-toolbox/tree/main/docs"
 
+[project.optional-dependencies]
+yaml = ["pyyaml>=6.0"]
+
+[dependency-groups]
+dev = [
+  "types-pyyaml>=6.0.12.20250915",
+  "pytest>=8.0",
+  "shapely>=2.0.7",
+  "pytest-cov>=7.1.0",
+  "typing-extensions>=4.16.0",
+  "pyyaml>=6.0",
+]
+
+[tool.ruff.lint]
+select = [
+  "N",
+  "UP",
+  "E",
+  "F",
+  "I",
+  "LOG",
+  "G",
+  "B",
+  "DTZ",
+  "SIM",
+  "C4",
+  "RET",
+  "PTH",
+  "ANN",
+  "ARG",
+  "PT",
+  "BLE",
+  "RUF",
+]
+pydocstyle.convention = "google"
+
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "-q"
+tmp_path_retention_policy = "none"
 testpaths = ["tests"]

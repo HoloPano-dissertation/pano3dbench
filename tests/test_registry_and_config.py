@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from benchmark_toolbox.config import load_experiment_config
+from benchmark_toolbox.config import ExperimentConfig
 from benchmark_toolbox.datasets import BaseDatasetLoader, ManifestDatasetLoader
 from benchmark_toolbox.models import BaseSceneEstimator, SubprocessSceneEstimator
 from benchmark_toolbox.registry import ComponentRegistry
@@ -14,9 +14,7 @@ from benchmark_toolbox.registry import ComponentRegistry
 class RegistryAliasTest(unittest.TestCase):
     def test_dataset_and_model_aliases_resolve_to_one_implementation(self) -> None:
         for name in ("manifest", "igibson"):
-            loader = BaseDatasetLoader.create(
-                name, {"manifest": str(Path(__file__))}
-            )
+            loader = BaseDatasetLoader.create(name, {"manifest": str(Path(__file__))})
             self.assertIsInstance(loader, ManifestDatasetLoader)
         for name in ("subprocess", "dpc", "holopano"):
             estimator = BaseSceneEstimator.create(name, {"command": ["true"]})
@@ -63,14 +61,12 @@ class ConfigPathResolutionTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            config = load_experiment_config(config_path)
+            config = ExperimentConfig.fromfile(config_path)
 
         self.assertEqual(
             config.metrics[0].parameters["mesh_root"], str(base / "meshes")
         )
-        self.assertEqual(
-            config.model.parameters["prediction_dir"], str(base / "pred")
-        )
+        self.assertEqual(config.model.parameters["prediction_dir"], str(base / "pred"))
 
 
 class ProtocolInheritanceTest(unittest.TestCase):
@@ -100,7 +96,7 @@ class ProtocolInheritanceTest(unittest.TestCase):
                     },
                 },
             )
-            config = load_experiment_config(base / "method.json")
+            config = ExperimentConfig.fromfile(base / "method.json")
 
         self.assertEqual(config.seed, 7)
         self.assertEqual(config.experiment_name, "method")
@@ -131,13 +127,15 @@ class ProtocolInheritanceTest(unittest.TestCase):
                     ],
                 },
             )
-            config = load_experiment_config(base / "c.json")
+            config = ExperimentConfig.fromfile(base / "c.json")
 
         self.assertEqual(
             [(m.parameters["name"], m.parameters["classes"]) for m in config.metrics],
             [("ap_chair", ["chair"]), ("ap_sofa", ["sofa"])],
         )
-        self.assertTrue(all(m.parameters["iou_threshold"] == 0.15 for m in config.metrics))
+        self.assertTrue(
+            all(m.parameters["iou_threshold"] == 0.15 for m in config.metrics)
+        )
 
     def test_cyclic_extends_is_reported(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,16 +143,18 @@ class ProtocolInheritanceTest(unittest.TestCase):
             self._write(base / "a.json", {"extends": "b.json"})
             self._write(base / "b.json", {"extends": "a.json"})
             with self.assertRaisesRegex(ValueError, "Cyclic"):
-                load_experiment_config(base / "a.json")
+                ExperimentConfig.fromfile(base / "a.json")
 
 
 class ShippedConfigsTest(unittest.TestCase):
     def test_every_example_config_loads(self) -> None:
-        configs = sorted((Path(__file__).resolve().parent.parent / "configs" / "examples").iterdir())
+        configs = sorted(
+            (Path(__file__).resolve().parent.parent / "configs" / "examples").iterdir()
+        )
         self.assertTrue(configs)
         for path in configs:
             with self.subTest(config=path.name):
-                config = load_experiment_config(path)
+                config = ExperimentConfig.fromfile(path)
                 self.assertTrue(config.metrics)
 
 

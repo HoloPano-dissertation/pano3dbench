@@ -141,9 +141,7 @@ class RunnerArgsTest(unittest.TestCase):
     def test_runner_args_are_appended_after_the_specs_own(self) -> None:
         command = self._command(["--pred-root", "out/pano3d_im3d"])
         self.assertIn("--pred-root", command)
-        self.assertEqual(
-            command[command.index("--pred-root") + 1], "out/pano3d_im3d"
-        )
+        self.assertEqual(command[command.index("--pred-root") + 1], "out/pano3d_im3d")
         self.assertLess(command.index("--pred-root"), command.index("--request"))
 
     def test_runner_args_are_recorded_in_provenance(self) -> None:
@@ -168,12 +166,10 @@ class RunnerArgsTest(unittest.TestCase):
         self.assertEqual(args.config, "configs/pano3d_igibson_im3d.yaml")
 
     def test_shipped_method_configs_select_distinct_prediction_roots(self) -> None:
-        from benchmark_toolbox.config import load_experiment_config
-
         examples = Path(__file__).resolve().parents[1] / "configs/examples"
         roots = {}
         for path in examples.glob("*.yaml"):
-            config = load_experiment_config(path)
+            config = ExperimentConfig.fromfile(path)
             arguments = list(config.model.parameters.get("runner_args", ()))
             if "--pred-root" in arguments:
                 roots[path.name] = arguments[arguments.index("--pred-root") + 1]
