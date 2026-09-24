@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 from benchmark_toolbox.config import ExperimentConfig
 from benchmark_toolbox.datasets import BaseDatasetLoader, ManifestDatasetLoader
 from benchmark_toolbox.models import BaseSceneEstimator, SubprocessSceneEstimator
@@ -33,78 +35,41 @@ class RegistryAliasTest(unittest.TestCase):
             registry.alias("first", "second")
 
 
-class ConfigPathResolutionTest(unittest.TestCase):
-    def test_relative_paths_resolve_against_the_config_directory(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp).resolve()
-            (base / "manifest.jsonl").write_text("", encoding="utf-8")
-            config_path = base / "experiment.json"
-            config_path.write_text(
-                json.dumps(
+def test_relative_paths_resolve_against_the_config_directory(tmp_path: Path) -> None:
+    manifest_path = tmp_path / "manifest.jsonl"
+    manifest_path.write_text("", encoding="utf-8")
+    config_path = tmp_path / "experiment.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "experiment_name": "t",
+                "model": {
+                    "type": "fixture",
+                    "parameters": {"prediction_dir": "pred"},
+                },
+                "dataset": {
+                    "type": "manifest",
+                    "parameters": {"manifest": "manifest.jsonl"},
+                },
+                "metrics": [
                     {
-                        "experiment_name": "t",
-                        "model": {
-                            "type": "fixture",
-                            "parameters": {"prediction_dir": "pred"},
-                        },
-                        "dataset": {
-                            "type": "manifest",
-                            "parameters": {"manifest": "manifest.jsonl"},
-                        },
-                        "metrics": [
-                            {
-                                "type": "mesh_chamfer",
-                                "parameters": {"mesh_root": "meshes"},
-                            }
-                        ],
+                        "type": "mesh_chamfer",
+                        "parameters": {"mesh_root": "meshes"},
                     }
-                ),
-                encoding="utf-8",
-            )
-            config = ExperimentConfig.fromfile(config_path)
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    config = ExperimentConfig.fromfile(config_path)
 
-        self.assertEqual(
-            config.metrics[0].parameters["mesh_root"], str(base / "meshes")
-        )
-        self.assertEqual(config.model.parameters["prediction_dir"], str(base / "pred"))
+    assert config.metrics[0].parameters["mesh_root"] == str(tmp_path / "meshes")
+    assert config.model.parameters["prediction_dir"] == str(tmp_path / "pred")
 
 
 class ProtocolInheritanceTest(unittest.TestCase):
     def _write(self, path: Path, payload: dict) -> None:
         path.write_text(json.dumps(payload), encoding="utf-8")
-
-    def test_metrics_are_inherited_and_locally_overridable(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp).resolve()
-            self._write(
-                base / "protocol.json",
-                {
-                    "seed": 7,
-                    "metrics": [{"type": "collision_rate"}],
-                    "model": {"type": "fixture", "parameters": {"prediction_dir": "p"}},
-                    "dataset": {"type": "manifest", "parameters": {"manifest": "m"}},
-                },
-            )
-            self._write(
-                base / "method.json",
-                {
-                    "extends": "protocol.json",
-                    "experiment_name": "method",
-                    "dataset": {
-                        "type": "manifest",
-                        "parameters": {"manifest": "other.jsonl"},
-                    },
-                },
-            )
-            config = ExperimentConfig.fromfile(base / "method.json")
-
-        self.assertEqual(config.seed, 7)
-        self.assertEqual(config.experiment_name, "method")
-        self.assertEqual([m.type for m in config.metrics], ["collision_rate"])
-        self.assertEqual(
-            config.dataset.parameters["manifest"], str(base / "other.jsonl")
-        )
-        self.assertEqual(config.model.parameters["prediction_dir"], str(base / "p"))
 
     def test_per_class_expands_into_one_row_per_class(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -137,13 +102,52 @@ class ProtocolInheritanceTest(unittest.TestCase):
             all(m.parameters["iou_threshold"] == 0.15 for m in config.metrics)
         )
 
-    def test_cyclic_extends_is_reported(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp).resolve()
-            self._write(base / "a.json", {"extends": "b.json"})
-            self._write(base / "b.json", {"extends": "a.json"})
-            with self.assertRaisesRegex(ValueError, "Cyclic"):
-                ExperimentConfig.fromfile(base / "a.json")
+
+def test_metrics_are_inherited_and_locally_overridable(tmp_path: Path) -> None:
+    protocol_path = tmp_path / "protocol.json"
+    protocol_path.write_text(
+        json.dumps(
+            {
+                "seed": 7,
+                "metrics": [{"type": "collision_rate"}],
+                "model": {"type": "fixture", "parameters": {"prediction_dir": "p"}},
+                "dataset": {"type": "manifest", "parameters": {"manifest": "m"}},
+            }
+        ),
+        "utf-8",
+    )
+    method_path = tmp_path / "method.json"
+    (
+        method_path.write_text(
+            json.dumps(
+                {
+                    "extends": "protocol.json",
+                    "experiment_name": "method",
+                    "dataset": {
+                        "type": "manifest",
+                        "parameters": {"manifest": "other.jsonl"},
+                    },
+                }
+            ),
+            "utf-8",
+        ),
+    )
+
+    config = ExperimentConfig.fromfile(method_path)
+    assert config.seed == 7
+    assert config.experiment_name == "method"
+    assert [m.type for m in config.metrics] == ["collision_rate"]
+    assert config.dataset.parameters["manifest"] == str(tmp_path / "other.jsonl")
+    assert config.model.parameters["prediction_dir"] == str(tmp_path / "p")
+
+
+def test_cyclic_extends_is_reported(tmp_path: Path) -> None:
+    apath = tmp_path / "a.json"
+    bpath = tmp_path / "b.json"
+    apath.write_text(json.dumps({"extends": "b.json"}), "utf-8")
+    bpath.write_text(json.dumps({"extends": "a.json"}), "utf-8")
+    with pytest.raises(ValueError, match="Cyclic"):
+        ExperimentConfig.fromfile(apath)
 
 
 class ShippedConfigsTest(unittest.TestCase):
