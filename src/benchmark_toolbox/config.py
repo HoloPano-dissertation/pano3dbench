@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, MutableMapping
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from itertools import chain
 from pathlib import Path
 from typing import Any
@@ -38,24 +38,6 @@ class ExperimentConfig:
     dataset: ComponentConfig
     metrics: tuple[ComponentConfig, ...]
     source_path: Path
-
-    # TODO(Daniel): Try to replace with asdict from dataclasss
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "experiment_name": self.experiment_name,
-            "seed": self.seed,
-            "output_dir": str(self.output_dir),
-            "model": {
-                "type": self.model.type,
-                "parameters": self.model.parameters,
-            },
-            "dataset": {
-                "type": self.dataset.type,
-                "parameters": self.dataset.parameters,
-            },
-            "metrics": [asdict(metric) for metric in self.metrics],
-            "source_path": str(self.source_path),
-        }
 
     @classmethod
     def fromfile(cls, path: str | Path) -> ExperimentConfig:
