@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from benchmark_toolbox.config import ExperimentConfig
+from benchmark_toolbox.config import ConfigError, ExperimentConfig
 from benchmark_toolbox.datasets import BaseDatasetLoader, ManifestDatasetLoader
 from benchmark_toolbox.models import BaseSceneEstimator, SubprocessSceneEstimator
 from benchmark_toolbox.registry import ComponentRegistry
@@ -146,7 +146,7 @@ def test_cyclic_extends_is_reported(tmp_path: Path) -> None:
     bpath = tmp_path / "b.json"
     apath.write_text(json.dumps({"extends": "b.json"}), "utf-8")
     bpath.write_text(json.dumps({"extends": "a.json"}), "utf-8")
-    with pytest.raises(ValueError, match="Cyclic"):
+    with pytest.raises(ConfigError, match="Cyclic"):
         ExperimentConfig.fromfile(apath)
 
 

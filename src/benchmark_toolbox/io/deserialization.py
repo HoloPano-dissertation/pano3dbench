@@ -6,6 +6,8 @@ from collections import ChainMap, UserDict
 from pathlib import Path
 from typing import Any
 
+from benchmark_toolbox.config import ConfigError
+
 
 # Does it really nead what parameter?
 def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
@@ -79,7 +81,7 @@ def load_map_chain(path: str | Path) -> ChainMap[str, Any]:
         Parameters that are closer to the root override distant ones
 
     Raises:
-        ValueError: If cycle import is detected
+        ConfigError: If cycle import is detected
             (message starts with "Cyclic 'extends'"")
 
     """
@@ -92,7 +94,7 @@ def load_map_chain(path: str | Path) -> ChainMap[str, Any]:
         extension_path = base.joinpath(last_map.pop("extends")).expanduser().resolve()
         if extension_path in seen:
             chain = " -> ".join(str(item) for item in (*seen, extension_path))
-            raise ValueError(
+            raise ConfigError(
                 f"Cyclic 'extends' in the experiment configuration: {chain}"
             )
         seen.add(extension_path)

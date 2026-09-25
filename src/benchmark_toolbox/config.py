@@ -6,8 +6,6 @@ from itertools import chain
 from pathlib import Path
 from typing import Any
 
-from benchmark_toolbox.io.deserialization import load_map_chain
-
 
 class ConfigError(Exception):
     pass
@@ -24,7 +22,7 @@ class ComponentConfig:
             type = str(map["type"])
         except KeyError as kerr:
             raise ConfigError(
-                "Component configuration requires a 'type' field"
+                f"Component configuration requires a 'type' field: {map!r}"
             ) from kerr
         return cls(type, map.get("parameters", {}))
 
@@ -41,6 +39,8 @@ class ExperimentConfig:
 
     @classmethod
     def fromfile(cls, path: str | Path) -> ExperimentConfig:
+        from benchmark_toolbox.io.deserialization import load_map_chain
+
         source_path = Path(path).expanduser().resolve()
         layered = load_map_chain(source_path)
         output_dir = Path(layered.get("output_dir", "artifacts")).expanduser().resolve()
@@ -53,7 +53,7 @@ class ExperimentConfig:
         except KeyError as kerr:
             missing_key = kerr.args[0]
             raise ConfigError(
-                f"There is no {missing_key} in presented config {path}"
+                f"There is no {missing_key} in presented config: {layered!r}"
             ) from None
         # per_class is a blunt marker. it never appears in single class configs
         # TODO(Daniel): Make another condition of multiclass metrics
@@ -78,7 +78,9 @@ def _expand_classes(metric: MutableMapping[str, Any]) -> Iterator[ComponentConfi
     parameters = metric.get("parameters", {})
     classes = parameters.get("classes")
     if not classes:
-        raise ValueError("A 'per_class' metric requires a non-empty 'classes' list")
+        raise ConfigError(
+            f"A 'per_class' metric requires a non-empty 'classes' list: {metric!r}"
+        )
     prefix = str(parameters.pop("name", "ap"))
     for class_name in classes:
         metric["parameters"] = parameters | {
