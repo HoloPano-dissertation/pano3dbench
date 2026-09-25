@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, MutableMapping
 from dataclasses import asdict, dataclass, field
 from itertools import chain
 from pathlib import Path
@@ -92,18 +92,15 @@ class ExperimentConfig:
         )
 
 
-def _expand_classes(metric: Mapping[str, Any]) -> Iterator[ComponentConfig]:
+def _expand_classes(metric: MutableMapping[str, Any]) -> Iterator[ComponentConfig]:
     parameters = metric.get("parameters", {})
     classes = parameters.get("classes")
     if not classes:
         raise ValueError("A 'per_class' metric requires a non-empty 'classes' list")
     prefix = str(parameters.pop("name", "ap"))
     for class_name in classes:
-        yield ComponentConfig(
-            str(metric["type"]),
-            {
-                **parameters,
-                "classes": [class_name],
-                "name": f"{prefix}_{class_name}",
-            },
-        )
+        metric["parameters"] = parameters | {
+            "classes": [class_name],
+            "name": f"{prefix}_{class_name}",
+        }
+        yield ComponentConfig.fromdict(metric)
