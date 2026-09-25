@@ -27,6 +27,8 @@ def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
 
 
 class MapFile(UserDict[str, Any]):
+    """Load mapping file and resolve all paths with respect to current file position"""
+
     path_keys = (
         "manifest",
         "checkpoint",
@@ -67,6 +69,20 @@ class MapFile(UserDict[str, Any]):
 
 
 def load_map_chain(path: str | Path) -> ChainMap[str, Any]:
+    """Load map files that can extends each other
+
+    Args:
+        path: Path to root mapping file
+
+    Returns:
+        Map of all options.
+        Parameters that are closer to the root override distant ones
+
+    Raises:
+        ValueError: If cycle import is detected
+            (message starts with "Cyclic 'extends'"")
+
+    """
     root_file = MapFile(path)
     maps = [root_file]
     seen = {root_file.origin}
