@@ -73,7 +73,7 @@ class ExperimentConfig:
             raise ConfigError(
                 f"There is no {missing_key} in presented config {path}"
             ) from None
-        # per_class is a blunt marker. it's never occurred in single class configs
+        # per_class is a blunt marker. it never appears in single class configs
         # TODO(Daniel): Make another condition of multiclass metrics
         metrics = chain.from_iterable(
             (ComponentConfig.fromdict(metric),)
