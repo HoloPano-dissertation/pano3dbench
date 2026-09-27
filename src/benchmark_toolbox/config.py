@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Iterator, Mapping, MutableMapping
 from dataclasses import dataclass, field
 from itertools import chain
@@ -76,6 +77,8 @@ class ExperimentConfig:
 
 def _expand_classes(metric: MutableMapping[str, Any]) -> Iterator[ComponentConfig]:
     parameters = metric.get("parameters", {})
+    with contextlib.suppress(KeyError):
+        parameters.pop("per_class")
     classes = parameters.get("classes")
     if not classes:
         raise ConfigError(
