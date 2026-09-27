@@ -27,7 +27,11 @@ def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
     else:
         msg = f"File {path} is not YAML or JSON"
         raise ValueError(msg)
-    return dict(data)
+    try:
+        return dict(data)
+    except TypeError as terr:
+        msg = f"{what} must be a mapping: {path}"
+        raise ConfigError(msg) from terr
 
 
 class MapFile(UserDict[str, Any]):
