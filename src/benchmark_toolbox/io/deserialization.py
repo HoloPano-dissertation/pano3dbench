@@ -14,17 +14,19 @@ def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     if path.suffix.lower() == ".json":
         data = json.loads(text)
-    elif path.suffix.lower() == ".yaml":
+    elif path.suffix.lower() in (".yaml", ".yml"):
         try:
             import yaml
         except ImportError as error:
-            raise RuntimeError(
+            msg = (
                 f"{what} in YAML format requires PyYAML. "
-                "Install the project with 'pip install -e .'."
-            ) from error
+                "Install yaml extra 'pip install -e .[yaml]'."
+            )
+            raise RuntimeError(msg) from error
         data = yaml.safe_load(text)
     else:
-        raise ValueError(f"File {path} is not YAML or JSON")
+        msg = f"File {path} is not YAML or JSON"
+        raise ValueError(msg)
     return dict(data)
 
 
