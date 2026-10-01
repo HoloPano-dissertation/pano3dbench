@@ -68,3 +68,6 @@ tmp_path_retention_policy = "none"
 testpaths = ["tests"]
 pythonpath = ["runners"]
 addopts = "-ra --strict-markers --strict-config"
+
+[tool.ty.environment]
+extra-paths = ["runners", "tools/3dfront_panorama_renderer/"]
