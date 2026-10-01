@@ -32,6 +32,8 @@ dev = [
   "pyyaml>=6.0",
   "numpy>=2.0.2",
   "pillow>=11.3.0",
+  "scipy>=1.13.1",
+  "h5py>=3.14.0",
 ]
 
 [tool.ruff.lint]
@@ -64,3 +66,5 @@ where = ["src"]
 [tool.pytest.ini_options]
 tmp_path_retention_policy = "none"
 testpaths = ["tests"]
+pythonpath = ["runners"]
+addopts = "-ra --strict-markers --strict-config"
