@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Benchmark Toolbox contributors" }]
-dependencies = ["numpy>=2.0.2", "pillow>=11.3.0"]
+dependencies = []
 
 [project.scripts]
 benchmark-toolbox = "benchmark_toolbox.cli:main"
@@ -30,6 +30,8 @@ dev = [
   "pytest-cov>=7.1.0",
   "typing-extensions>=4.16.0",
   "pyyaml>=6.0",
+  "numpy>=2.0.2",
+  "pillow>=11.3.0",
 ]
 
 [tool.ruff.lint]
