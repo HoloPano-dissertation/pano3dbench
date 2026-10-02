@@ -6,6 +6,8 @@ from collections import ChainMap, UserDict
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from benchmark_toolbox.config import ConfigError
 
 
@@ -15,14 +17,6 @@ def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
     if path.suffix.lower() == ".json":
         data = json.loads(text)
     elif path.suffix.lower() in (".yaml", ".yml"):
-        try:
-            import yaml
-        except ImportError as error:
-            msg = (
-                f"{what} in YAML format requires PyYAML. "
-                "Install yaml extra 'pip install -e .[yaml]'."
-            )
-            raise RuntimeError(msg) from error
         data = yaml.safe_load(text)
     else:
         msg = f"File {path} is not YAML or JSON"

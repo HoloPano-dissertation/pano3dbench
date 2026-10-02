@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Benchmark Toolbox contributors" }]
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.3",
+]
 
 [project.scripts]
 benchmark-toolbox = "benchmark_toolbox.cli:main"
@@ -19,9 +21,6 @@ benchmark-toolbox = "benchmark_toolbox.cli:main"
 Repository = "https://github.com/HoloPano-dissertation/benchmark-toolbox"
 Documentation = "https://github.com/HoloPano-dissertation/benchmark-toolbox/tree/main/docs"
 
-[project.optional-dependencies]
-yaml = ["pyyaml>=6.0"]
-
 [dependency-groups]
 dev = [
   "types-pyyaml>=6.0.12.20250915",
@@ -29,7 +28,6 @@ dev = [
   "shapely>=2.0.7",
   "pytest-cov>=7.1.0",
   "typing-extensions>=4.16.0",
-  "pyyaml>=6.0",
   "numpy>=2.0.2",
   "pillow>=11.3.0",
   "scipy>=1.13.1",
