@@ -34,6 +34,7 @@ dev = [
   "pillow>=11.3.0",
   "scipy>=1.13.1",
   "h5py>=3.14.0",
+  "types-shapely>=2.1.0.20250917",
 ]
 
 [tool.ruff.lint]
@@ -70,4 +71,9 @@ pythonpath = ["runners"]
 addopts = "-ra --strict-markers --strict-config"
 
 [tool.ty.environment]
-extra-paths = ["runners", "tools/3dfront_panorama_renderer/"]
+extra-paths = [
+  "runners",
+  "tools/3dfront_panorama_renderer/",
+  "tools/3dfront_dataset/_lib",
+  "tools/3dfront_training",
+]
