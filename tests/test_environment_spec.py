@@ -1,47 +1,46 @@
-import unittest
+from collections.abc import Callable
 from pathlib import Path
 
-from benchmark_toolbox.environments import load_environment_spec
+import pytest
 
-REPO = Path(__file__).resolve().parents[1]
-
-
-class EnvironmentSpecTest(unittest.TestCase):
-    def test_load_echo_spec_from_file(self) -> None:
-        spec = load_environment_spec(REPO / "configs/environments/echo.yaml")
-        self.assertEqual(spec.name, "echo")
-        self.assertEqual(spec.backend, "venv")
-        self.assertEqual(spec.runner.entry, "runners/echo_runner.py")
-        self.assertEqual(spec.variant, "cpu")
-        self.assertIsNone(spec.repo)
-
-    def test_load_dpc_spec_real_fields(self) -> None:
-        spec = load_environment_spec(REPO / "configs/environments/dpc.yaml")
-        self.assertEqual(spec.backend, "conda")
-        self.assertEqual(spec.name, "Pano3D")
-        self.assertIsNotNone(spec.repo)
-        self.assertIn("DeepPanoContext", spec.repo.url)
-        self.assertTrue(spec.checkpoints)
-        self.assertEqual(spec.runner.wrapper[0], "xvfb-run")
-        self.assertEqual(spec.runner.args[:2], ("--config", "configs/pano3d_igibson.yaml"))
-
-    def test_inline_dict_requires_runner_entry(self) -> None:
-        with self.assertRaises(ValueError):
-            load_environment_spec({"name": "x", "backend": "venv"}, base_dir=REPO)
-
-    def test_fingerprint_is_stable_and_variant_sensitive(self) -> None:
-        base = {
-            "name": "x",
-            "backend": "conda",
-            "python": "3.8",
-            "runner": {"entry": "r.py"},
-        }
-        cpu = load_environment_spec({**base, "variant": "cpu"}, base_dir=REPO)
-        cpu_again = load_environment_spec({**base, "variant": "cpu"}, base_dir=REPO)
-        gpu = load_environment_spec({**base, "variant": "gpu"}, base_dir=REPO)
-        self.assertEqual(cpu.fingerprint(), cpu_again.fingerprint())
-        self.assertNotEqual(cpu.fingerprint(), gpu.fingerprint())
+from benchmark_toolbox.environments import EnvironmentSpec, load_environment_spec
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_load_echo_spec_from_file(load_env: Callable[[str], EnvironmentSpec]) -> None:
+    spec = load_env("echo")
+    assert spec.name == "echo"
+    assert spec.backend == "venv"
+    assert spec.runner.entry == "runners/echo_runner.py"
+    assert spec.variant == "cpu"
+    assert spec.repo is None
+
+
+def test_load_dpc_spec_real_fields(load_env: Callable[[str], EnvironmentSpec]) -> None:
+    spec = load_env("dpc")
+    assert spec.backend == "conda"
+    assert spec.name == "Pano3D"
+    assert spec.repo is not None
+    assert "DeepPanoContext" in spec.repo.url
+    assert spec.checkpoints
+    assert spec.runner.wrapper[0] == "xvfb-run"
+    assert spec.runner.args[:2] == ("--config", "configs/pano3d_igibson.yaml")
+
+
+def test_inline_dict_requires_runner_entry(repo_root: Path) -> None:
+    with pytest.raises(ValueError, match="Environment spec requires"):
+        load_environment_spec({"name": "x", "backend": "venv"}, base_dir=repo_root)
+
+
+def test_fingerprint_is_stable_and_variant_sensitive(repo_root: Path) -> None:
+    base = {
+        "name": "x",
+        "backend": "conda",
+        "python": "3.8",
+        "runner": {"entry": "r.py"},
+    }
+
+    def load(variant: str) -> EnvironmentSpec:
+        return load_environment_spec({**base, "variant": variant}, base_dir=repo_root)
+
+    assert load("cpu").fingerprint() == load("cpu").fingerprint()
+    assert load("cpu").fingerprint() != load("gpu").fingerprint()
