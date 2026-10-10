@@ -73,7 +73,8 @@ addopts = "-ra --strict-markers --strict-config"
 [tool.ty.environment]
 extra-paths = [
   "runners",
-  "tools/3dfront_panorama_renderer/",
+  "tools/3dfront_panorama_renderer",
+  "tools/3dfront_dataset",
   "tools/3dfront_dataset/_lib",
   "tools/3dfront_training",
 ]
