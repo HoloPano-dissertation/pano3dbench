@@ -29,8 +29,10 @@ def frozen_rooms():
             rows.append({"room_id": room_id, "house_id": room_id.split("/")[0], "split": split})
     index_rows(rows)
     policy = exclusion_policy()
-    if len(rows) != policy["expected_retained_rooms"] \
-            or set(index_rows(rows)) & set(index_rows(policy["rooms"])):
+    excluded = {row["room_id"] for row in policy["rooms"]}
+    if len(excluded) != len(policy["rooms"]):
+        raise ValueError("The reviewed exclusions name a room twice")
+    if len(rows) != policy["expected_retained_rooms"] or set(index_rows(rows)) & excluded:
         raise ValueError("Frozen split is inconsistent with the reviewed exclusions")
     return sorted(rows, key=lambda r: (r["split"], r["room_id"]))
 
@@ -49,7 +51,7 @@ def initialize(scene_root, root):
         row.update(room_dir=str(room), min_clearance=min(0.1, 0.04*height))
     for name in ("splits", "source", "outputs", "state"):
         (root / name).mkdir(parents=True, exist_ok=True)
-    (root / "source/3D-FRONT-TEST-SCENE").symlink_to(scene_root, target_is_directory=True)
+    (root / "source/rooms").symlink_to(scene_root, target_is_directory=True)
     for split in ("train", "val", "test"):
         shutil.copyfile(HERE / "splits" / (split+".txt"), root / "splits" / (split+".txt"))
     (root / "splits/rooms.jsonl").write_text("".join(json.dumps(r)+"\n" for r in rows))
@@ -63,6 +65,31 @@ def initialize(scene_root, root):
     (root / "state/training_gate.json").write_text('{"training_approved":false,"reason":"New dataset requires rendering and QA"}\n')
     print("Initialized %d rooms with frozen house-disjoint splits; source GLBs unchanged"
           % len(rows))
+
+
+def refresh_experiment(root):
+    rows = frozen_rooms()
+    known = {row["room_id"]: row for row in
+             (json.loads(s) for s in (root / "splits/rooms.jsonl").read_text().splitlines() if s.strip())}
+    for row in rows:
+        before = known.get(row["room_id"])
+        if before is None:
+            raise ValueError("The split names a room the experiment never had: " + row["room_id"])
+        row.update(room_dir=before["room_dir"], min_clearance=before["min_clearance"])
+    for split in ("train", "val", "test"):
+        shutil.copyfile(HERE / "splits" / (split+".txt"), root / "splits" / (split+".txt"))
+    (root / "splits/rooms.jsonl").write_text("".join(json.dumps(r)+"\n" for r in rows))
+    policy = exclusion_policy()
+    (root / "splits/excluded_rooms.jsonl").write_text(
+        "".join(json.dumps(r)+"\n" for r in policy["rooms"]))
+    summary = json.loads((root / "splits/summary.json").read_text())
+    summary.update({
+        "room_counts": {s: sum(r["split"] == s for r in rows) for s in ("train", "val", "test")},
+        "excluded_rooms": len(policy["rooms"]),
+        "expected_panoramas": len(rows)*VIEWS_PER_ROOM,
+        "policy_id": policy["policy_id"]})
+    (root / "splits/summary.json").write_text(json.dumps(summary, indent=2)+"\n")
+    return len(rows)
 
 
 def run_module(name, root, extra=()):
@@ -84,12 +111,25 @@ def main():
     export.add_argument("--allow-unscalable", action="store_true",
                         help="Record rooms failing a scale check instead of stopping")
     export.add_argument("--expand-distance", help="Slack in metres for a touching relation")
+    reject = commands.add_parser(
+        "reject", help="Move rooms the renderer could not make out of the frozen split")
+    reject.add_argument("experiment_root", type=Path)
+    reject.add_argument("--rendered", type=Path, required=True,
+                        help="Root of the finished renders, holding <house>/<room>/")
+    reject.add_argument("--reasons", type=Path, required=True,
+                        help="JSON object: room id -> what the renderer said about it")
+    reject.add_argument("--evidence", default="The panorama renderer could not place the "
+                        "required cameras or finish the views for this room.")
+    reject.add_argument("--views", type=int, default=VIEWS_PER_ROOM)
     validate = commands.add_parser("validate", help="Validate exported training/evaluation inputs")
     validate.add_argument("experiment_root", type=Path)
     freeze = commands.add_parser(
         "freeze", help="Build the frozen house-disjoint split from a source of GLB rooms")
     freeze.add_argument("scene_root", type=Path)
     freeze.add_argument("--metadata", help="Scale and class report of the original 3D-FRONT")
+    freeze.add_argument("--rooms",
+                        help="Take only the rooms of this list: a JSON array of <house>/<room>, "
+                             "or one id per line. Without it the whole source is taken")
     freeze.add_argument("--val", type=float, default=DEFAULT_VAL)
     freeze.add_argument("--test", type=float, default=DEFAULT_TEST)
     freeze.add_argument("--seed", type=int, default=0)
@@ -102,16 +142,33 @@ def main():
         from _lib.freeze import freeze as build_split
         print(json.dumps(build_split(
             args.scene_root, HERE / "splits", args.metadata, args.val, args.test,
-            args.seed, args.reference_height, args.force), indent=2, ensure_ascii=False))
+            args.seed, args.reference_height, args.force, room_list=args.rooms),
+            indent=2, ensure_ascii=False))
         return
     root = args.experiment_root.resolve()
+    if args.command == "reject":
+        from _lib.reject import apply_to_splits, plan_exclusions, read_reasons
+        exclusions = plan_exclusions(frozen_rooms(), args.rendered, args.views,
+                                     read_reasons(args.reasons), args.evidence)
+        if not exclusions:
+            print(json.dumps({"excluded_now": 0, "rooms": len(frozen_rooms())}, indent=2))
+            return
+        report = apply_to_splits(HERE / "splits", exclusions)
+        report["rooms_in_experiment"] = refresh_experiment(root)
+        (root / "state/training_gate.json").write_text(
+            '{"training_approved":false,"reason":"Set composition changed; exports and '
+            'validation must be redone"}\n')
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return
     if args.command == "init":
         initialize(args.scene_root, root)
     else:
         actual = index_rows([json.loads(s) for s in (root / "splits/rooms.jsonl").read_text().splitlines() if s.strip()])
         expected = index_rows(frozen_rooms())
         if set(actual) != set(expected) or any(actual[k]["split"] != expected[k]["split"] for k in expected):
-            raise ValueError("Active dataset must match the frozen 981-room split")
+            raise ValueError(
+                "The rooms of this experiment differ from the frozen split of %d rooms; "
+                "exports and metrics from the two are not comparable" % len(expected))
         if args.command == "export":
             (root / "state").mkdir(exist_ok=True)
             (root / "state/training_gate.json").write_text('{"training_approved":false,"reason":"Exports changed; review and validation required"}\n')
