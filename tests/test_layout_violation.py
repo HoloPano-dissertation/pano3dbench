@@ -1,4 +1,5 @@
 import math
+from typing import Union
 
 import pytest
 
@@ -26,7 +27,7 @@ def _scene(*objects: SceneObject) -> SceneOutput:
     return SceneOutput(layout=ROOM, objects=tuple(objects))
 
 
-def _obj(object_id: str, box: BoundingBox3D | OrientedBox3D) -> SceneObject:
+def _obj(object_id: str, box: Union[BoundingBox3D, OrientedBox3D]) -> SceneObject:
     return SceneObject(object_id, "thing", box)
 
 
@@ -73,7 +74,7 @@ def test_oriented_object_outside_room_is_a_violation() -> None:
 
 
 def test_rejects_out_of_range_tolerance() -> None:
-    with pytest.raises(ValueError, match=r"tolerance must be in the interval [0, 1)"):
+    with pytest.raises(ValueError, match="tolerance must be in the interval"):
         LayoutViolationRate({"tolerance": 1.0})
 
 
