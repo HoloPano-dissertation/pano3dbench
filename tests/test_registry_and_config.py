@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from benchmark_toolbox.config import ConfigError, ExperimentConfig
 from benchmark_toolbox.datasets import BaseDatasetLoader, ManifestDatasetLoader
@@ -16,6 +17,12 @@ EXAMPLE_CONFIGS = sorted(EXAMPLES_DIR.iterdir()) if EXAMPLES_DIR.is_dir() else [
 
 def write_json(path: Path, payload: dict) -> Path:
     path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+def write_yaml(path: Path, payload: dict) -> Path:
+    with path.open("w", encoding="utf-8") as o:
+        yaml.dump(payload, o)
     return path
 
 
@@ -73,6 +80,37 @@ def test_relative_paths_resolve_against_the_config_directory(tmp_path: Path) -> 
 
     assert config.metrics[0].parameters["mesh_root"] == str(tmp_path / "meshes")
     assert config.model.parameters["prediction_dir"] == str(tmp_path / "pred")
+
+
+def test_output_dir_resolution(tmp_path: Path) -> None:
+    config_dir = tmp_path / "configs" / "deep"
+    config_dir.mkdir(parents=True)
+    config_path = write_yaml(
+        config_dir / "conf.yaml",
+        {
+            "output_dir": "../../artifacts/dpc",
+            "model": {
+                "type": "dpc",
+                "parameters": {
+                    "environment": "../environments/dpc.yaml",
+                },
+            },
+            "dataset": {
+                "type": "igibson",
+                "parameters": {
+                    "manifest": "../../data/examples/manifest.jsonl",
+                },
+            },
+            "metrics": [
+                {"type": "layout_iou_3d"},
+                {"type": "object_map", "parameters": {"iou_threshold": 0.5}},
+                {"type": "collision_rate"},
+            ],
+        },
+    )
+
+    config = ExperimentConfig.fromfile(config_path)
+    assert config.output_dir == tmp_path / "artifacts" / "dpc"
 
 
 # --- protocol inheritance -----------------------------------------------------
