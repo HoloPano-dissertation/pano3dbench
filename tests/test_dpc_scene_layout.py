@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from pathlib import Path
 
 import pytest
@@ -171,3 +172,11 @@ def test_a_camera_is_named_by_room_and_view_not_view_alone(naming):
     assert first != second
     assert "/" not in first and "/" not in second
     assert first == "Bedroom-1__0"
+
+
+def test_the_model_path_names_the_folder_dpc_appends_the_mesh_name_to(naming):
+    shape = "/data/objects/sofa/house__room__Sofa_1/mesh.ply"
+    folder = naming.model_folder(shape)
+    assert folder == "/data/objects/sofa/house__room__Sofa_1"
+    assert os.path.join("/ignored/root", folder, "mesh_watertight.ply") == \
+        "/data/objects/sofa/house__room__Sofa_1/mesh_watertight.ply"

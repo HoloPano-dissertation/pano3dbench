@@ -18,6 +18,7 @@ from utils.layout_utils import (manhattan_2d_from_manhattan_world_layout,
 from utils.transform_utils import bdb3d_corners
 
 TOLERANCE = 1e-3  # m
+MESHES_SEEN = set()
 
 
 def parse_args() -> argparse.Namespace:
@@ -90,6 +91,13 @@ def check_scene(data, truth):
         worst = max(worst, min(set_distance(corners, t) for t in truth_corners))
     if worst > TOLERANCE:
         problems.append(f"object box off its ground truth by {worst:.3f} m")
+    for obj in data["objs"]:
+        mesh = Path(obj["model_path"]) / "mesh_watertight.ply"  # as DPC opens it
+        if mesh not in MESHES_SEEN:
+            if not mesh.is_file():
+                problems.append(f"no ground-truth mesh {mesh}")
+                break
+            MESHES_SEEN.add(mesh)
     relation = data.get("relation") or {}
     for key in ("obj_wall_rot", "obj_wall_tch"):
         if key in relation and np.asarray(relation[key]).shape[-1] != count:

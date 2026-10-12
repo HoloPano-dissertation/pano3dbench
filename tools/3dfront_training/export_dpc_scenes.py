@@ -56,6 +56,10 @@ def experiment_classes(root):
     return list(json.loads(path.read_text(encoding="utf-8"))["classes"])
 
 
+def model_folder(shape):
+    return str(Path(shape).parent)
+
+
 def object_entry(scene_object, instance_id, segmentation, camera, classes):
     geometry = seg2obj(segmentation, instance_id, camera)
     if geometry is None:
@@ -64,7 +68,7 @@ def object_entry(scene_object, instance_id, segmentation, camera, classes):
     entry = {
         "classname": scene_object["label"],
         "label": classes.index(scene_object["label"]),
-        "model_path": scene_object["attributes"]["shape"],
+        "model_path": model_folder(scene_object["attributes"]["shape"]),
         "is_fixed": False,
         "bdb3d": dpc_bdb3d(box, camera["pos"]),
     }
