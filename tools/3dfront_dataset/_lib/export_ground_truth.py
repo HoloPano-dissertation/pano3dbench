@@ -13,6 +13,7 @@ from typing import Iterator
 
 import numpy as np
 
+from contour_cleanup import clean_layout
 from metric_scale import (
     DEFAULT_REFERENCE_HEIGHT,
     NORMALISED_SHELL_EXTENT,
@@ -246,6 +247,20 @@ def room_geometry(room_dir: Path, scene_root: Path) -> tuple[np.ndarray, np.ndar
     return joined.min(axis=0), joined.max(axis=0), objects
 
 
+def contour_summary(layouts) -> dict:
+    reports = [layout["contour_cleanup"] for layout in layouts]
+    changes = sorted(abs(report["area_change"]) for report in reports)
+    return {
+        "rooms": len(reports),
+        "vertices_before": sum(report["vertices_before"] for report in reports),
+        "vertices_after": sum(report["vertices_after"] for report in reports),
+        "straight_vertices_removed": sum(report["straight_vertices_removed"] for report in reports),
+        "steps_flattened": sum(report["steps_flattened"] for report in reports),
+        "rooms_with_refused_steps": sum(report["steps_refused"] > 0 for report in reports),
+        "max_area_change": changes[-1] if changes else 0.0,
+    }
+
+
 def main() -> None:
     args = parse_args()
     experiment_root = args.experiment_root.resolve()
@@ -268,6 +283,7 @@ def main() -> None:
         class_list = metadata.get("class_names") or class_list
     coarse_labels = Counter()
     scale_cache: dict[str, tuple[float, str]] = {}
+    contour_cache: dict[str, dict] = {}
     scale_reports: list[dict] = []
     unscalable: list[dict] = []
     needs_review: list[dict] = []
@@ -294,9 +310,6 @@ def main() -> None:
                 render_path = render_dir / "pilot.json"
             render_metadata = json.loads(render_path.read_text(encoding="utf-8"))
             recovered_layout = render_metadata.get("layout")
-            if recovered_layout is not None:
-                layout_min = np.asarray(recovered_layout["bounds_min"])
-                layout_max = np.asarray(recovered_layout["bounds_max"])
             if room_id not in scale_cache:
                 scale, report = resolve_scale(
                     room_id, recovered_layout, table=scale_table,
@@ -310,6 +323,13 @@ def main() -> None:
                     needs_review.append(report)
                 scale_cache[room_id] = (scale, report["source"])
             scale, scale_source = scale_cache[room_id]
+            if recovered_layout is not None:
+                if room_id not in contour_cache:
+                    cameras = [c[:2] for c in render_metadata["camera_locations"]]
+                    contour_cache[room_id] = clean_layout(recovered_layout, cameras, scale)
+                recovered_layout = contour_cache[room_id]
+                layout_min = np.asarray(recovered_layout["bounds_min"])
+                layout_max = np.asarray(recovered_layout["bounds_max"])
             camera = np.asarray(render_metadata["camera_locations"][view_index], dtype=float)
             objects = []
             for item in room_objects:
@@ -402,6 +422,7 @@ def main() -> None:
             "unscalable_rooms": [r["room_id"] for r in unscalable],
             "contour_review_room_count": len(needs_review),
         },
+        "contour_cleanup": contour_summary(contour_cache.values()),
         "metric_scale_certified": bool(scale_table) and not unscalable and not any(
             report["source"] != "table" for report in scale_reports),
     }

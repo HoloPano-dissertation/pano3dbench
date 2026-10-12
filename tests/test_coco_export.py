@@ -122,3 +122,13 @@ def test_masks_are_run_length_encoded_not_polygons(experiment):
     trainer = (Path(__file__).resolve().parents[1] / "tools" / "3dfront_training"
                / "train_detector.py").read_text()
     assert 'cfg.INPUT.MASK_FORMAT = "bitmask"' in trainer
+
+
+def test_a_second_mount_point_still_names_paths_inside_the_root(tmp_path):
+    real = tmp_path / "lustre" / "exp"
+    real.mkdir(parents=True)
+    (tmp_path / "home").symlink_to(tmp_path / "lustre")
+    build(tmp_path / "home" / "exp")
+    run(real.resolve())
+    payload = json.loads((real / "coco" / "train.json").read_text())
+    assert all(image["file_name"].startswith("rgb/train/") for image in payload["images"])

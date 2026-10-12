@@ -13,7 +13,7 @@ import h5py
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from scene_layout import manhattan_world, sorted_by_column
+from scene_layout import dpc_bdb3d, manhattan_pix, manhattan_world
 
 from utils.igibson_utils import IGScene
 from utils.relation_utils import RelationOptimization
@@ -66,12 +66,7 @@ def object_entry(scene_object, instance_id, segmentation, camera, classes):
         "label": classes.index(scene_object["label"]),
         "model_path": scene_object["attributes"]["shape"],
         "is_fixed": False,
-        "bdb3d": {
-            "centroid": np.asarray(box["center"], dtype=float)
-            + np.asarray(camera["pos"], dtype=float),
-            "basis": np.asarray(box["basis"], dtype=float),
-            "size": np.asarray(box["size"], dtype=float),
-        },
+        "bdb3d": dpc_bdb3d(box, camera["pos"]),
     }
     entry.update(geometry)
     entry["bdb2d_clip"] = dict(entry["bdb2d"])
@@ -146,11 +141,8 @@ def main() -> None:
                                    attributes, horizon, classes)
                 dropped[split] += len(ground_truth["objects"]) - len(data["objs"])
                 scene = IGScene(data)
-                pixels, world = sorted_by_column(
-                    scene.transform.world2campix(data["layout"]["manhattan_world"]),
-                    data["layout"]["manhattan_world"])
-                scene.data["layout"]["manhattan_pix"] = pixels
-                scene.data["layout"]["manhattan_world"] = world
+                scene.data["layout"]["manhattan_pix"] = manhattan_pix(
+                    data["layout"]["manhattan_world"], data["camera"]["pos"], WIDTH, HEIGHT)
                 optimiser.generate_relation(scene)
                 target = output / split / data["scene"] / data["room"] / data["name"]
                 target.mkdir(parents=True, exist_ok=True)

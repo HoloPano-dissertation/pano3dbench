@@ -54,9 +54,10 @@ def uncompressed_rle(mask: np.ndarray) -> dict:
 
 def inside_dataset(path, prefixes):
     text = str(path)
-    for prefix in prefixes:
-        if text.startswith(prefix):
-            return text[len(prefix):].lstrip("/")
+    for candidate in (text, str(Path(path).resolve())):
+        for prefix in prefixes:
+            if candidate.startswith(prefix):
+                return candidate[len(prefix):].lstrip("/")
     raise ValueError(
         "%s lies outside the dataset root, so the annotation could not name it by a "
         "path another machine can follow" % text)

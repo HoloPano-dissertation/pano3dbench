@@ -100,7 +100,7 @@ def main() -> None:
         image_dir.mkdir(parents=True, exist_ok=True)
         label_dir.mkdir(parents=True, exist_ok=True)
         dense_dir.mkdir(parents=True, exist_ok=True)
-        manifest = experiment_root / "manifests" / f"{split}.jsonl"
+        manifest = experiment_root / "manifests_gt" / f"{split}.jsonl"
         records = [
             json.loads(line)
             for line in manifest.read_text(encoding="utf-8").splitlines()
@@ -116,7 +116,10 @@ def main() -> None:
             if not render_path.is_file():
                 render_path = render_dir / "pilot.json"
             render_metadata = json.loads(render_path.read_text())
-            layout = render_metadata.get("layout")
+            # The cleaned contour from the ground truth, so that labels, relations and
+            # DPC scenes see the same walls; metres or renderer units give the same pixels.
+            ground_truth = json.loads(Path(record["ground_truth"]).read_text())["metadata"]
+            layout = ground_truth.get("layout_geometry_world")
             if layout is None and not args.allow_legacy_cuboid:
                 raise ValueError("Renderer metadata has no recovered polygon; legacy cuboid labels are disabled")
             if layout is None and room_id not in room_cache:
@@ -125,9 +128,12 @@ def main() -> None:
                 )
                 room_cache[room_id] = (layout_min, layout_max)
             width, height = (int(v) for v in render_metadata["resolution"])
-            camera = np.asarray(
-                render_metadata["camera_locations"][view_index], dtype=np.float64
-            )
+            if layout is not None:
+                camera = np.asarray(ground_truth["camera_location_world"], dtype=np.float64)
+            else:
+                camera = np.asarray(
+                    render_metadata["camera_locations"][view_index], dtype=np.float64
+                )
             if layout is not None:
                 targets = polygon_targets(layout, camera, width, height)
                 try:
@@ -145,7 +151,9 @@ def main() -> None:
             ensure_symlink(image_source, image_target)
             if targets is not None:
                 np.savez_compressed(dense_dir / f"{sample_name}.npz", **targets)
-            if corners is not None:
+            if corners is None:
+                label_target.unlink(missing_ok=True)  # a stale label from an earlier contour
+            else:
                 label_target.write_text(
                 "".join(f"{x:.6f} {y:.6f}\n" for x, y in corners),
                 encoding="utf-8",
@@ -159,10 +167,12 @@ def main() -> None:
         "room_count": len(rooms_seen),
         "sample_counts": dict(counts),
         "layout_model": "recovered floor-contour extrusion with inferred structural floor/ceiling heights",
+        "contour": "ground-truth contour after cleanup: no straight-wall vertices, door reveals flattened",
+        "ranges_units": "metres",
         "label_format": "dense boundary/corner targets; native text additionally for hole-free contours",
         "legacy_cuboid_allowed": args.allow_legacy_cuboid,
         "projection": "equirectangular 1024x512",
-        "corner_order": "native labels preserve polygon traversal, not azimuth sorting",
+        "corner_order": "native labels follow the clockwise wall order from the leftmost corner; a hidden corner goes back in column",
     }
     state_dir = experiment_root / "state"
     state_dir.mkdir(parents=True, exist_ok=True)
