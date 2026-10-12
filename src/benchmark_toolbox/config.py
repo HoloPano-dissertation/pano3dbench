@@ -44,7 +44,13 @@ class ExperimentConfig:
 
         source_path = Path(path).expanduser().resolve()
         layered = load_map_chain(source_path)
-        output_dir = Path(layered.get("output_dir", "artifacts")).expanduser().resolve()
+        if odir := layered.get("output_dir"):
+            output_dir = Path(odir).expanduser()
+            if not output_dir.is_absolute():
+                output_dir = source_path.parent.joinpath(output_dir)
+        else:
+            output_dir = source_path.parent.joinpath("artifacts")
+        output_dir = output_dir.resolve()
         metrics_data = layered.get("metrics", [])
         if not metrics_data:
             raise ConfigError("At least one metric must be configured")
