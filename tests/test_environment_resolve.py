@@ -1,36 +1,33 @@
-import os
-import unittest
+from collections.abc import Callable
 from pathlib import Path
 
-from benchmark_toolbox.environments import load_environment_spec
+from benchmark_toolbox.environments import EnvironmentSpec
 from benchmark_toolbox.environments.conda import CondaEnvironmentManager
 from benchmark_toolbox.environments.venv import VenvEnvironmentManager
 
-REPO = Path(__file__).resolve().parents[1]
+
+def test_conda_resolve_builds_conda_run_prefix(
+    load_env: Callable[[str], EnvironmentSpec],
+) -> None:
+    handle = CondaEnvironmentManager().resolve(load_env("dpc"))
+
+    assert "run" in handle.command_prefix
+    assert "Pano3D" in handle.command_prefix
+    assert handle.command_prefix[-1] == "python"
+    assert handle.env.get("CUDA_VISIBLE_DEVICES") != ""
+    handle_path = Path("repos", "Pano3D")
+    assert str(handle.cwd).endswith(str(handle_path))
+    assert handle.wrapper[0] == "xvfb-run"
 
 
-class ResolveTest(unittest.TestCase):
-    def test_conda_resolve_builds_conda_run_prefix(self) -> None:
-        spec = load_environment_spec(REPO / "configs/environments/dpc.yaml")
-        handle = CondaEnvironmentManager().resolve(spec)
-        self.assertIn("run", handle.command_prefix)
-        self.assertIn("Pano3D", handle.command_prefix)
-        self.assertEqual(handle.command_prefix[-1], "python")
-        self.assertNotEqual(handle.env.get("CUDA_VISIBLE_DEVICES"), "")
-        self.assertTrue(str(handle.cwd).endswith(os.path.join("repos", "Pano3D")))
-        self.assertEqual(handle.wrapper[0], "xvfb-run")
+def test_venv_resolve_points_at_venv_python(
+    load_env: Callable[[str], EnvironmentSpec],
+) -> None:
+    handle = VenvEnvironmentManager().resolve(load_env("echo"))
 
-    def test_venv_resolve_points_at_venv_python(self) -> None:
-        spec = load_environment_spec(REPO / "configs/environments/echo.yaml")
-        handle = VenvEnvironmentManager().resolve(spec)
-        self.assertEqual(len(handle.command_prefix), 1)
-        python = handle.command_prefix[0]
-        self.assertTrue(
-            python.endswith(os.path.join("venvs", "echo", "bin", "python"))
-            or python.endswith(os.path.join("venvs", "echo", "Scripts", "python.exe"))
-        )
-        self.assertIsNone(handle.cwd)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    assert len(handle.command_prefix) == 1
+    python = handle.command_prefix[0]
+    assert python.endswith(
+        str(Path("venvs", "echo", "bin", "python"))
+    ) or python.endswith(str(Path("venvs", "echo", "Scripts", "python.exe")))
+    assert handle.cwd is None

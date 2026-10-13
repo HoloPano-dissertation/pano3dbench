@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
-from benchmark_toolbox.serialization import read_mapping_file
+from benchmark_toolbox.io.deserialization import read_mapping_file
 
 DEFAULT_WORKSPACE = ".benchmark_toolbox"
 

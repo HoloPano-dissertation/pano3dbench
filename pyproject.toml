@@ -9,16 +9,9 @@ description = "Extensible benchmark toolbox for holistic indoor scene understand
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [
-  { name = "Benchmark Toolbox contributors" }
-]
+authors = [{ name = "Benchmark Toolbox contributors" }]
 dependencies = [
-  "PyYAML>=6.0",
-]
-
-[project.optional-dependencies]
-dev = [
-  "pytest>=8.0",
+    "pyyaml>=6.0.3",
 ]
 
 [project.scripts]
@@ -28,9 +21,58 @@ benchmark-toolbox = "benchmark_toolbox.cli:main"
 Repository = "https://github.com/HoloPano-dissertation/benchmark-toolbox"
 Documentation = "https://github.com/HoloPano-dissertation/benchmark-toolbox/tree/main/docs"
 
+[dependency-groups]
+dev = [
+  "types-pyyaml>=6.0.12.20250915",
+  "pytest>=8.0",
+  "shapely>=2.0.7",
+  "pytest-cov>=7.1.0",
+  "typing-extensions>=4.16.0",
+  "numpy>=2.0.2",
+  "pillow>=11.3.0",
+  "scipy>=1.13.1",
+  "h5py>=3.14.0",
+  "types-shapely>=2.1.0.20250917",
+]
+
+[tool.ruff.lint]
+select = [
+  "N",
+  "UP",
+  "E",
+  "F",
+  "I",
+  "LOG",
+  "G",
+  "B",
+  "DTZ",
+  "SIM",
+  "C4",
+  "RET",
+  "PTH",
+  "ANN",
+  "ARG",
+  "PT",
+  "BLE",
+  "RUF",
+]
+pydocstyle.convention = "google"
+
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "-q"
+tmp_path_retention_policy = "none"
 testpaths = ["tests"]
+pythonpath = ["runners"]
+addopts = "-ra --strict-markers --strict-config"
+
+[tool.ty.environment]
+extra-paths = [
+  "runners",
+  "tools/3dfront_panorama_renderer",
+  "tools/3dfront_dataset",
+  "tools/3dfront_dataset/_lib",
+  "tools/3dfront_training",
+]

@@ -1,6 +1,6 @@
-import sys
-import unittest
 from pathlib import Path
+
+import pytest
 
 from benchmark_toolbox.domain import BoundingBox3D, SceneSample
 from benchmark_toolbox.models.subprocess import (
@@ -9,48 +9,28 @@ from benchmark_toolbox.models.subprocess import (
 )
 
 
-class UsableWrapperTest(unittest.TestCase):
-    def test_keeps_wrapper_when_executable_present(self) -> None:
-        self.assertEqual(_usable_wrapper(["env", "-i"]), ("env", "-i"))
-
-    def test_drops_wrapper_when_executable_missing(self) -> None:
-        self.assertEqual(
-            _usable_wrapper(["benchmark-toolbox-no-such-binary-xyz", "-a"]),
-            (),
-        )
-
-    def test_empty_wrapper(self) -> None:
-        self.assertEqual(_usable_wrapper([]), ())
-
-
-class SubprocessSceneEstimatorTest(unittest.TestCase):
-    def test_json_protocol(self) -> None:
-        fixture = Path(__file__).parent / "fixtures/fake_model_runner.py"
-        estimator = SubprocessSceneEstimator(
-            {
-                "command": [
-                    sys.executable,
-                    str(fixture),
-                    "--request={request}",
-                    "--output={output}",
-                ],
-                "environment_name": "test-environment",
-            }
-        )
-        sample = SceneSample(
-            sample_id="scene-001",
-            input_path=Path(__file__),
-        )
-
-        output = estimator.predict(sample)
-
-        self.assertEqual(
-            output.layout,
-            BoundingBox3D((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)),
-        )
-        self.assertEqual(output.metadata["sample_id"], "scene-001")
-        self.assertEqual(output.metadata["environment"], "test-environment")
+@pytest.mark.parametrize(
+    ("wrapper", "expected"),
+    [
+        pytest.param(["env", "-i"], ("env", "-i"), id="executable-present"),
+        pytest.param(
+            ["benchmark-toolbox-no-such-binary-xyz", "-a"], (), id="executable-missing"
+        ),
+        pytest.param([], (), id="empty"),
+    ],
+)
+def test_usable_wrapper(wrapper: list[str], expected: tuple[str, ...]) -> None:
+    assert _usable_wrapper(wrapper) == expected
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_json_protocol(fake_command: list[str]) -> None:
+    estimator = SubprocessSceneEstimator(
+        {"command": fake_command, "environment_name": "test-environment"}
+    )
+    sample = SceneSample(sample_id="scene-001", input_path=Path(__file__))
+
+    output = estimator.predict(sample)
+
+    assert output.layout == BoundingBox3D((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
+    assert output.metadata["sample_id"] == "scene-001"
+    assert output.metadata["environment"] == "test-environment"

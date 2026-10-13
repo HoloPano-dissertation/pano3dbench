@@ -4,7 +4,7 @@ import json
 import math
 import random
 import statistics
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,7 +23,9 @@ class EvaluationResult:
     summary: dict[str, dict[str, Any]]
 
 
-def _bootstrap_ci(values: list[float], seed: int, samples: int = 2000) -> tuple[float, float]:
+def _bootstrap_ci(
+    values: list[float], seed: int, samples: int = 2000
+) -> tuple[float, float]:
     count = len(values)
     rng = random.Random(seed)
     means: list[float] = []
@@ -45,7 +47,13 @@ def _aggregate(values: list[float], seed: int = 0) -> dict[str, float | int]:
     mean = statistics.fmean(values)
     median = statistics.median(values)
     if count == 1:
-        return {"count": 1, "mean": mean, "median": median, "ci95_low": mean, "ci95_high": mean}
+        return {
+            "count": 1,
+            "mean": mean,
+            "median": median,
+            "ci95_low": mean,
+            "ci95_high": mean,
+        }
     low, high = _bootstrap_ci(values, seed)
     return {
         "count": count,
@@ -99,9 +107,7 @@ class Evaluator:
                     f"{values['mean']:.6f} | {values['median']:.6f} | "
                     f"[{values['ci95_low']:.6f}, {values['ci95_high']:.6f}] |"
                 )
-        (output_dir / "report.md").write_text(
-            "\n".join(lines) + "\n", encoding="utf-8"
-        )
+        (output_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     def run(self) -> EvaluationResult:
         random.seed(self.config.seed)
@@ -110,7 +116,9 @@ class Evaluator:
         predictions_dir.mkdir(parents=True, exist_ok=True)
 
         per_scene_metrics = [
-            metric for metric in self.metrics if not getattr(metric, "dataset_level", False)
+            metric
+            for metric in self.metrics
+            if not getattr(metric, "dataset_level", False)
         ]
         dataset_metrics = [
             metric for metric in self.metrics if getattr(metric, "dataset_level", False)
@@ -147,9 +155,7 @@ class Evaluator:
                     continue
                 scene_metrics[metric.name] = value
                 metric_values[metric.name].append(value)
-            records.append(
-                {"sample_id": sample.sample_id, "metrics": scene_metrics}
-            )
+            records.append({"sample_id": sample.sample_id, "metrics": scene_metrics})
 
         metrics_path = output_dir / "metrics.jsonl"
         metrics_path.write_text(
@@ -191,11 +197,17 @@ class Evaluator:
             "git_revision": git_revision(),
             "seed": self.config.seed,
             "scene_count": len(records),
-            "config": self.config.to_dict(),
+            "config": asdict(self.config),
             "estimator": self.estimator.provenance(),
         }
         (output_dir / "run.json").write_text(
-            json.dumps(run_manifest, ensure_ascii=False, indent=2, sort_keys=True),
+            json.dumps(
+                run_manifest,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+                default=str,
+            ),
             encoding="utf-8",
         )
         self._write_report(output_dir, summary)
