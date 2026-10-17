@@ -67,7 +67,7 @@ def main() -> int:
     kept: list[str] = []
     for line in open(manifest_path, encoding="utf-8"):
         sample_id = json.loads(line)["sample_id"]
-        pkl = by_id.get(sample_id)
+        pkl = by_id.get(sample_id) or by_id.get(dpc_runner.dpc_scene_name(sample_id))
         if pkl is None:
             missing += 1
             continue
@@ -82,7 +82,9 @@ def main() -> int:
                     if os.path.exists(candidate):
                         obj["mesh_path"] = candidate
             scene = dpc_runner.convert_data_pkl(data)
-            with open(os.path.join(out_dir, sample_id + ".json"), "w", encoding="utf-8") as out:
+            target = os.path.join(out_dir, sample_id + ".json")
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with open(target, "w", encoding="utf-8") as out:
                 json.dump(scene, out, ensure_ascii=False)
             converted += 1
             kept.append(line)

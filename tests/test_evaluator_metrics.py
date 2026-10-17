@@ -109,6 +109,17 @@ class EvaluatorMetricsTest(unittest.TestCase):
             report = (Path(tmp) / "report.md").read_text(encoding="utf-8")
             self.assertIn("| layout_iou_3d | 0 | n/a | n/a | n/a |", report)
 
+    def test_a_sample_id_with_folders_gets_its_prediction_copy(self) -> None:
+        prediction = SceneOutput(layout=BoundingBox3D((0, 0, 0), (1, 1, 1)), objects=())
+        sample = SceneSample(
+            sample_id="house-1/Bedroom-2/3", input_path=Path(__file__), ground_truth=None
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            Evaluator(_config(tmp), _FixedEstimator(prediction), _ListDataset([sample]),
+                      [CollisionRate()]).run()
+            self.assertTrue(
+                (Path(tmp) / "predictions" / "house-1" / "Bedroom-2" / "3.json").is_file())
+
     def test_layout_iou_is_not_applicable_without_ground_truth_layout(self) -> None:
         boxed = SceneOutput(layout=BoundingBox3D((0, 0, 0), (1, 1, 1)))
         layout_free = SceneOutput(layout=None)

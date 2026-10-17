@@ -125,6 +125,7 @@ class Evaluator:
         samples = list(self.dataset)
         for sample, prediction in zip(samples, self.estimator.predict_many(samples)):
             prediction_path = predictions_dir / f"{sample.sample_id}.json"
+            prediction_path.parent.mkdir(parents=True, exist_ok=True)
             prediction_path.write_text(
                 json.dumps(
                     prediction.to_dict(),

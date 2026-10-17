@@ -45,6 +45,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--max-iter", type=int, default=14000)
     parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--base-lr", type=float, default=1e-4)
+    parser.add_argument("--repeat-threshold", type=float, default=0.0)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--eval-period", type=int, default=1000)
     parser.add_argument("--checkpoint-period", type=int, default=1000)
@@ -88,7 +90,10 @@ def main() -> None:
     cfg.INPUT.MIN_SIZE_TEST = 512
     cfg.INPUT.MAX_SIZE_TEST = 1024
     cfg.SOLVER.IMS_PER_BATCH = args.batch_size
-    cfg.SOLVER.BASE_LR = 1e-4
+    cfg.SOLVER.BASE_LR = args.base_lr
+    if args.repeat_threshold > 0:
+        cfg.DATALOADER.SAMPLER_TRAIN = "RepeatFactorTrainingSampler"
+        cfg.DATALOADER.REPEAT_THRESHOLD = args.repeat_threshold
     cfg.SOLVER.MAX_ITER = args.max_iter
     cfg.SOLVER.STEPS = decay_milestones(args.max_iter)
     cfg.SOLVER.CHECKPOINT_PERIOD = args.checkpoint_period

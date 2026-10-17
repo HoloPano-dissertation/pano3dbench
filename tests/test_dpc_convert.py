@@ -45,6 +45,46 @@ class DpcConvertTest(unittest.TestCase):
         self.assertEqual(scene["layout"]["min_corner"], [-2.0, -3.0, -4.0])
         self.assertEqual(scene["layout"]["max_corner"], [2.0, 3.0, 4.0])
 
+    def test_a_rotated_box_keeps_its_corners_through_the_contract(self) -> None:
+        import math
+        c, s = math.cos(math.radians(30)), math.sin(math.radians(30))
+        dpc_basis = [[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]]
+        centroid, size = [1.0, 2.0, 0.5], [2.0, 1.0, 0.8]
+        data = {"objs": [{"classname": "table", "bdb3d": {
+            "centroid": centroid, "basis": dpc_basis, "size": size}}]}
+        signs = [(x, y, z) for x in (-0.5, 0.5) for y in (-0.5, 0.5) for z in (-0.5, 0.5)]
+        dpc_corners = [[centroid[i] + sum(dpc_basis[i][k] * signs_k * size[k]
+                                          for k, signs_k in enumerate(sign)) for i in range(3)]
+                       for sign in signs]
+        bbox = dpc_runner.convert_data_pkl(data)["objects"][0]["bbox"]
+        rows = bbox["basis"]
+        ours = [[bbox["center"][i] + sum(sign[k] * bbox["size"][k] * rows[k][i] for k in range(3))
+                 for i in range(3)] for sign in signs]
+        worst = max(min(math.dist(a, b) for b in ours) for a in dpc_corners)
+        self.assertLess(worst, 1e-9)
+
+    def test_boxes_and_layout_are_centred_on_the_camera(self) -> None:
+        data = {
+            "camera": {"pos": [10.0, 20.0, 1.5]},
+            "objs": [{"classname": "bed", "bdb3d": {
+                "centroid": [11.0, 22.0, 0.5], "basis": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                "size": [2, 1, 1]}}],
+            "layout": {"manhattan_world": [[8, 18, 0], [12, 18, 0], [12, 23, 0], [8, 23, 0],
+                                           [8, 18, 2.6], [12, 18, 2.6], [12, 23, 2.6], [8, 23, 2.6]]},
+        }
+        scene = dpc_runner.convert_data_pkl(data)
+        self.assertEqual(scene["objects"][0]["bbox"]["center"], [1.0, 2.0, -1.0])
+        self.assertEqual(scene["layout"]["min_corner"], [-2.0, -2.0, -1.5])
+        self.assertEqual(scene["layout"]["max_corner"], [2.0, 3.0, 1.1])
+
+    def test_a_front3d_sample_finds_the_folder_dpc_wrote(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            pkl = Path(root) / "run1" / "visualization" / "house-1" / "Bedroom-2__3" / "data.pkl"
+            pkl.parent.mkdir(parents=True)
+            pkl.write_bytes(b"")
+            found = dpc_runner.find_data_pkl("house-1/Bedroom-2/3", search_root=root)
+            self.assertTrue(found.endswith("house-1/Bedroom-2__3/data.pkl"))
+
     def test_convert_attaches_mesh_path_as_shape(self) -> None:
         data = {
             "objs": [
