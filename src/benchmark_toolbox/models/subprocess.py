@@ -230,4 +230,4 @@ class SubprocessSceneEstimator(BaseSceneEstimator):
         for sample in samples:
             yield self._scene(by_id[sample.sample_id])
 
-BaseSceneEstimator.registry.alias("subprocess", "dpc", "holopano")
+BaseSceneEstimator.registry.alias("subprocess", "dpc")

@@ -8,7 +8,5 @@ __pycache__/
 .DS_Store
 
 artifacts/
-data/raw/
-data/cache/
 checkpoints/
 .benchmark_toolbox/
