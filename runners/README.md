@@ -1,12 +1,18 @@
-# Model runners
+# Раннеры моделей
 
-A runner lives in the isolated environment of a specific model and converts the
-model's internal result into the shared JSON contract.
+Раннер работает в изолированном окружении конкретной модели и переводит её собственный
+результат в общий JSON-формат. Он использует только стандартную библиотеку и не
+импортирует пакет комплекса: в чужом окружении его нет.
 
-The repository ships runners for Total3D, IM3D and DPC. A new model is plugged in
-with a separate runner file, without adding its source code to the toolbox.
+| Раннер           | Для чего                                                           |
+|------------------|--------------------------------------------------------------------|
+| `dpc_runner.py`  | DPC, Im3D-Pano и Total3D-Pano: все три пишут одинаковый `data.pkl` |
+| `echo_runner.py` | проверка пути без модели: возвращает одну и ту же сцену            |
+| `_common.py`     | общие функции: чтение запроса, рамки, запись ответа                |
 
-## Input
+Новая модель подключается отдельным файлом раннера, её код в комплекс не добавляется.
+
+## Вход
 
 ```json
 {
@@ -16,13 +22,21 @@ with a separate runner file, without adding its source code to the toolbox.
 }
 ```
 
-## Output
+## Выход
 
 ```json
 {
   "layout": {
-    "min_corner": [0.0, 0.0, 0.0],
-    "max_corner": [4.0, 3.0, 5.0]
+    "min_corner": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_corner": [
+      4.0,
+      3.0,
+      5.0
+    ]
   },
   "objects": [
     {
@@ -30,8 +44,33 @@ with a separate runner file, without adding its source code to the toolbox.
       "label": "chair",
       "score": 0.96,
       "bbox": {
-        "min_corner": [1.0, 0.0, 1.0],
-        "max_corner": [2.0, 1.0, 2.0]
+        "center": [
+          1.5,
+          0.5,
+          1.5
+        ],
+        "size": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "basis": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
       }
     }
   ],
@@ -43,12 +82,15 @@ with a separate runner file, without adding its source code to the toolbox.
 }
 ```
 
-## Batch mode (optional)
+Рамка предмета может быть и по осям (`min_corner`/`max_corner`), но протокол статьи
+считает ориентированный 3D-IoU, поэтому раннеры методов пишут `center`/`size`/`basis`.
 
-Entering a model environment is expensive — for DeepPanoContext, deserializing the
-first prediction imports the gibson2 stack (~36 s measured), while every further one in
-the same process costs under a millisecond. A runner that can loop internally declares
-it in its environment spec:
+## Пакетный режим
+
+Войти в окружение модели дорого: у DeepPanoContext первое чтение предсказания
+импортирует gibson2 примерно за 36 с, каждое следующее в том же процессе — меньше
+миллисекунды. Раннер, который умеет обрабатывать сцены в цикле, объявляет это
+в спецификации окружения:
 
 ```yaml
 runner:
@@ -56,32 +98,49 @@ runner:
   batch: true
 ```
 
-and then receives ALL samples in one launch:
+и получает ВСЕ сцены за один запуск:
 
 ```json
-{ "samples": [ { "sample_id": "scene-001", "input_path": "...", "metadata": {} }, ... ] }
+{
+  "samples": [
+    {
+      "sample_id": "scene-001",
+      "input_path": "...",
+      "metadata": {}
+    },
+    ...
+  ]
+}
 ```
 
-answering with one entry per sample, each carrying its own `sample_id`:
+Отвечает он по записи на сцену, у каждой свой `sample_id`:
 
 ```json
-{ "outputs": [ { "layout": {...}, "objects": [...], "relations": [],
-                 "metadata": { "sample_id": "scene-001" } }, ... ] }
+{
+  "outputs": [
+    {
+      "layout": {
+        ...
+      },
+      "objects": [
+        ...
+      ],
+      "relations": [],
+      "metadata": {
+        "sample_id": "scene-001"
+      }
+    },
+    ...
+  ]
+}
 ```
 
-Answers are matched by `sample_id`, never by position, and a batch that silently drops
-a sample is an error. Use `rc.read_requests()` to read either shape and
-`rc.write_outputs()` to answer a batch — `runners/echo_runner.py` is the reference: a
-batch-capable runner is a loop around the single-sample case. A model that genuinely
-needs a fresh process per sample simply leaves `batch` unset.
+Ответы сопоставляются по `sample_id`, а не по порядку; пропущенная сцена — ошибка.
+`rc.read_requests()` читает оба вида запроса, `rc.write_outputs()` пишет пакетный ответ.
+Образец — `echo_runner.py`: пакетный раннер — это цикл вокруг обработки одной сцены.
+Модели, которой нужен новый процесс на каждую сцену, `batch` указывать не нужно.
 
-## Launch
+## Запуск
 
-A runner receives paths through command arguments matching the `{request}` and
-`{output}` placeholders. Logs can be written to stdout/stderr: the benchmark
-keeps them if the process fails.
-
-The first practical integration step for each model is to extract, from the
-existing Colab notebook, the stages that load an already-computed result and
-convert it into this JSON. Once the converter is verified, real inference is
-wired up to it.
+Раннер получает пути аргументами вместо подстановок `{request}` и `{output}`. Писать
+в stdout и stderr можно: если процесс упадёт, комплекс сохранит этот вывод.

@@ -16,7 +16,5 @@ uv.lock
 
 # Project
 artifacts/
-data/raw/
-data/cache/
 checkpoints/
 .benchmark_toolbox/

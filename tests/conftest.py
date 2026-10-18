@@ -1,5 +1,3 @@
-"""Shared fixtures for the benchmark_toolbox test suite."""
-
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -32,7 +30,6 @@ def fake_command(fake_runner: Path) -> list[str]:
 
 @pytest.fixture
 def load_env(repo_root: Path) -> Callable[[str], EnvironmentSpec]:
-    """Load a shipped environment spec by short name (``"dpc"``, ``"echo"``...)."""
 
     def _load(name: str) -> EnvironmentSpec:
         return load_environment_spec(

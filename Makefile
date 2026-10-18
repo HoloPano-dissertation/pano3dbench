@@ -16,7 +16,7 @@ test-stdlib:
 	PYTHONPATH=src $(PYTHON) -m unittest discover -s tests -v
 
 smoke:
-	$(VENV)/bin/benchmark-toolbox run --config configs/examples/smoke.json
+	$(VENV)/bin/benchmark-toolbox run --config configs/demo/smoke.json
 
 env-doctor:
 	$(VENV)/bin/benchmark-toolbox env doctor
@@ -24,7 +24,7 @@ env-doctor:
 # End-to-end demo of the environment manager: creates a venv env and runs through it.
 env-demo:
 	$(VENV)/bin/benchmark-toolbox env prepare --env configs/environments/echo.yaml
-	$(VENV)/bin/benchmark-toolbox run --config configs/examples/echo_local.yaml
+	$(VENV)/bin/benchmark-toolbox run --config configs/demo/echo_local.yaml
 
 clean:
 	rm -rf artifacts .pytest_cache .benchmark_toolbox
