@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "benchmark-toolbox"
 version = "0.1.0"
-description = "Extensible benchmark toolbox for holistic indoor scene understanding models"
+description = "Pano3DBench: extensible benchmark for holistic indoor scene understanding models"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
-  { name = "Benchmark Toolbox contributors" }
+  { name = "Pano3DBench contributors" }
 ]
 dependencies = [
   "PyYAML>=6.0",
@@ -25,8 +25,8 @@ dev = [
 benchmark-toolbox = "benchmark_toolbox.cli:main"
 
 [project.urls]
-Repository = "https://github.com/HoloPano-dissertation/benchmark-toolbox"
-Documentation = "https://github.com/HoloPano-dissertation/benchmark-toolbox/tree/main/docs"
+Repository = "https://github.com/HoloPano-dissertation/pano3dbench"
+Documentation = "https://github.com/HoloPano-dissertation/pano3dbench/tree/main/docs"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,4 +1,4 @@
-# Benchmark Toolbox
+# Pano3DBench
 
 *[English version — README.en.md](README.en.md).*
 
@@ -46,7 +46,7 @@ benchmark-toolbox run --config configs/igibson/runs/dpc_rescore.yaml  # по г�
 ```
 
 **Веса, обученные нами** (головы формы на iGibson):
-[выпуск `weights-v1`](https://github.com/HoloPano-dissertation/benchmark-toolbox/releases/tag/weights-v1) —
+[выпуск `weights-v1`](https://github.com/HoloPano-dissertation/pano3dbench/releases/tag/weights-v1) —
 `total3d-pano_mgn_igibson.pth` (MGN для Total3D-Pano), `im3d-pano_ldif_igibson.pth`
 (LDIF для обученной Im3D-Pano), `SHA256SUMS.txt`, `MANIFEST.md`. Веса DPC авторов
 общедоступны в выпуске DeepPanoContext и здесь не распространяются.
@@ -91,7 +91,7 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 ## Состав репозитория
 
 ```text
-benchmark-toolbox/
+pano3dbench/
 ├── configs/
 │   ├── environments/        окружения моделей (dpc, echo)
 │   ├── protocols/           общий протокол показателей для любого набора

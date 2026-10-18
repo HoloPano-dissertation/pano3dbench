@@ -29,7 +29,7 @@
 | этот репозиторий | `git clone`, затем `make setup` | все |
 | набор iGibson | официальный сайт iGibson/BEHAVIOR (доступ по заявке, не распространяется), подготовка как в репозитории DeepPanoContext | 3 |
 | код и веса DeepPanoContext | `benchmark-toolbox env prepare --env configs/environments/dpc.yaml` | 2, 3 |
-| наши веса голов формы (MGN, LDIF) | [выпуск `weights-v1`](https://github.com/HoloPano-dissertation/benchmark-toolbox/releases/tag/weights-v1): `total3d-pano_mgn_igibson.pth`, `im3d-pano_ldif_igibson.pth`, `SHA256SUMS.txt` | 2, 3 для Im3D-Pano (обученной) и Total3D-Pano |
+| наши веса голов формы (MGN, LDIF) | [выпуск `weights-v1`](https://github.com/HoloPano-dissertation/pano3dbench/releases/tag/weights-v1): `total3d-pano_mgn_igibson.pth`, `im3d-pano_ldif_igibson.pth`, `SHA256SUMS.txt` | 2, 3 для Im3D-Pano (обученной) и Total3D-Pano |
 | предсказания и эталон в JSON (`igibson_bench`, около 7 МБ) | получаются на уровне 2, см. ниже. В репозиторий пока не входят | 1 |
 
 Ниже `$TBX` — путь к этому репозиторию, `$DPC` — к развёрнутому DeepPanoContext

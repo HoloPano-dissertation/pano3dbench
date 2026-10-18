@@ -1,4 +1,4 @@
-# Benchmark Toolbox
+# Pano3DBench
 
 *[Русская версия — README.md](README.md) (main).*
 
@@ -45,7 +45,7 @@ benchmark-toolbox run --config configs/igibson/runs/dpc_rescore.yaml  # from con
 ```
 
 **Weights trained by us** (shape heads on iGibson):
-[release `weights-v1`](https://github.com/HoloPano-dissertation/benchmark-toolbox/releases/tag/weights-v1) —
+[release `weights-v1`](https://github.com/HoloPano-dissertation/pano3dbench/releases/tag/weights-v1) —
 `total3d-pano_mgn_igibson.pth` (MGN for Total3D-Pano), `im3d-pano_ldif_igibson.pth` (LDIF
 for the trained Im3D-Pano), `SHA256SUMS.txt`, `MANIFEST.md`. The authors' DPC weights are
 public in the DeepPanoContext release and are not redistributed here.
@@ -74,7 +74,7 @@ that separates LDIF from MGN, is measured by `mesh_chamfer` and `mesh_fscore`.
 ## Layout
 
 ```text
-benchmark-toolbox/
+pano3dbench/
 ├── configs/
 │   ├── environments/        model environments (dpc, echo)
 │   ├── protocols/           shared metric protocol for any set
