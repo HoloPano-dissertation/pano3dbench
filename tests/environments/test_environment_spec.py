@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from benchmark_toolbox.environments import EnvironmentSpec, load_environment_spec
+from pano3dbench.environments import EnvironmentSpec, load_environment_spec
 
 
 def test_load_echo_spec_from_file(load_env: Callable[[str], EnvironmentSpec]) -> None:

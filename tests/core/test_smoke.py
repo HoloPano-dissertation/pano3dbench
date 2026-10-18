@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from benchmark_toolbox.config import load_experiment_config
-from benchmark_toolbox.datasets import BaseDatasetLoader
-from benchmark_toolbox.evaluator import Evaluator
-from benchmark_toolbox.metrics import BaseMetric
-from benchmark_toolbox.models import BaseSceneEstimator
+from pano3dbench.config import load_experiment_config
+from pano3dbench.datasets import BaseDatasetLoader
+from pano3dbench.evaluator import Evaluator
+from pano3dbench.metrics import BaseMetric
+from pano3dbench.models import BaseSceneEstimator
 
 
 def test_example_pipeline(repo_root: Path, tmp_path: Path) -> None:

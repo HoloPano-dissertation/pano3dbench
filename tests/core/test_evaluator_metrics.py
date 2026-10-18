@@ -5,22 +5,22 @@ from typing import Optional
 
 import pytest
 
-from benchmark_toolbox.config import ComponentConfig, ExperimentConfig
-from benchmark_toolbox.datasets.base import BaseDatasetLoader
-from benchmark_toolbox.domain import (
+from pano3dbench.config import ComponentConfig, ExperimentConfig
+from pano3dbench.datasets.base import BaseDatasetLoader
+from pano3dbench.domain import (
     BoundingBox3D,
     SceneObject,
     SceneOutput,
     SceneSample,
 )
-from benchmark_toolbox.evaluator import Evaluator, _aggregate
-from benchmark_toolbox.metrics.base import BaseMetric
-from benchmark_toolbox.metrics import (
+from pano3dbench.evaluator import Evaluator, _aggregate
+from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.metrics import (
     CollisionRate,
     LayoutIoU3D,
     ObjectDetectionMAPDataset,
 )
-from benchmark_toolbox.models.base import BaseSceneEstimator
+from pano3dbench.models.base import BaseSceneEstimator
 
 UNIT_BOX = BoundingBox3D((0, 0, 0), (1, 1, 1))
 

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from benchmark_toolbox.domain import BoundingBox3D, SceneSample
-from benchmark_toolbox.models.subprocess import (
+from pano3dbench.domain import BoundingBox3D, SceneSample
+from pano3dbench.models.subprocess import (
     SubprocessSceneEstimator,
     _usable_wrapper,
 )
@@ -14,7 +14,7 @@ from benchmark_toolbox.models.subprocess import (
     [
         pytest.param(["env", "-i"], ("env", "-i"), id="executable-present"),
         pytest.param(
-            ["benchmark-toolbox-no-such-binary-xyz", "-a"], (), id="executable-missing"
+            ["pano3dbench-no-such-binary-xyz", "-a"], (), id="executable-missing"
         ),
         pytest.param([], (), id="empty"),
     ],

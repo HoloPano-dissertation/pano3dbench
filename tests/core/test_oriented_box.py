@@ -3,14 +3,14 @@ import math
 import pytest
 from typing_extensions import TypeAlias
 
-from benchmark_toolbox.domain import (
+from pano3dbench.domain import (
     BoundingBox3D,
     OrientedBox3D,
     SceneObject,
     SceneOutput,
     parse_box,
 )
-from benchmark_toolbox.metrics import ObjectDetectionMAP
+from pano3dbench.metrics import ObjectDetectionMAP
 
 IDENTITY = (
     (1.0, 0.0, 0.0),

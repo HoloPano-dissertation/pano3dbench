@@ -8,9 +8,9 @@ from typing import Any, Optional
 import pytest
 from typing_extensions import TypeAlias
 
-from benchmark_toolbox.domain import BoundingBox3D, SceneObject, SceneOutput
-from benchmark_toolbox.metrics.base import BaseMetric
-from benchmark_toolbox.metrics.shape import (
+from pano3dbench.domain import BoundingBox3D, SceneObject, SceneOutput
+from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.metrics.shape import (
     MeshChamfer,
     MeshFScore,
     _build_kd,

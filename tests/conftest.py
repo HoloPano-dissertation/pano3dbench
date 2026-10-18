@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from benchmark_toolbox.domain import SceneSample
-from benchmark_toolbox.environments import EnvironmentSpec, load_environment_spec
+from pano3dbench.domain import SceneSample
+from pano3dbench.environments import EnvironmentSpec, load_environment_spec
 
 
 @pytest.fixture(scope="session")

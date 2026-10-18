@@ -4,10 +4,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from benchmark_toolbox.config import load_experiment_config
-from benchmark_toolbox.datasets import BaseDatasetLoader, ManifestDatasetLoader
-from benchmark_toolbox.models import BaseSceneEstimator, SubprocessSceneEstimator
-from benchmark_toolbox.registry import ComponentRegistry
+from pano3dbench.config import load_experiment_config
+from pano3dbench.datasets import BaseDatasetLoader, ManifestDatasetLoader
+from pano3dbench.models import BaseSceneEstimator, SubprocessSceneEstimator
+from pano3dbench.registry import ComponentRegistry
 
 CONFIGS_DIR = Path(__file__).resolve().parents[2] / "configs"
 EXAMPLE_CONFIGS = sorted(

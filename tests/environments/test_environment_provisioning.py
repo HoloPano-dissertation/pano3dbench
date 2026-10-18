@@ -4,9 +4,9 @@ from typing import Any, NoReturn
 
 import pytest
 
-from benchmark_toolbox.environments import EnvironmentSpec
-from benchmark_toolbox.environments.base import BaseEnvironmentManager, EnvHandle
-from benchmark_toolbox.environments.plan import (
+from pano3dbench.environments import EnvironmentSpec
+from pano3dbench.environments.base import BaseEnvironmentManager, EnvHandle
+from pano3dbench.environments.plan import (
     DONE,
     NETWORK,
     TODO,
@@ -14,8 +14,8 @@ from benchmark_toolbox.environments.plan import (
     render_plan,
     verify_checkpoints,
 )
-from benchmark_toolbox.environments.spec import CheckpointSpec, load_environment_spec
-from benchmark_toolbox.environments.steps import checkpoint_path, download_checkpoint
+from pano3dbench.environments.spec import CheckpointSpec, load_environment_spec
+from pano3dbench.environments.steps import checkpoint_path, download_checkpoint
 
 REPO = Path("/repo")
 
@@ -95,7 +95,7 @@ def test_staged_file_reaches_a_destination_outside_the_repository(
         url="https://invalid.example/never-fetched", dest=str(target)
     )
 
-    set_env(BENCHMARK_TOOLBOX_ARTIFACTS=str(staging))
+    set_env(PANO3DBENCH_ARTIFACTS=str(staging))
     download_checkpoint(checkpoint, tmp_path / "repo")
 
     assert target.read_bytes() == b"backbone"
@@ -107,7 +107,7 @@ def test_missing_checkpoint_fails_fast_and_says_what_to_stage(
     checkpoint = CheckpointSpec(
         url="https://example.invalid/weights.pth", dest="ckpt/weights.pth"
     )
-    set_env(BENCHMARK_TOOLBOX_OFFLINE="1", BENCHMARK_TOOLBOX_ARTIFACTS=None)
+    set_env(PANO3DBENCH_OFFLINE="1", PANO3DBENCH_ARTIFACTS=None)
 
     with pytest.raises(RuntimeError) as caught:
         download_checkpoint(checkpoint, tmp_path)
@@ -125,7 +125,7 @@ def test_staged_checkpoint_still_works_offline(
     checkpoint = CheckpointSpec(
         url="https://example.invalid/weights.pth", dest="ckpt/weights.pth"
     )
-    set_env(BENCHMARK_TOOLBOX_OFFLINE="1", BENCHMARK_TOOLBOX_ARTIFACTS=str(staging))
+    set_env(PANO3DBENCH_OFFLINE="1", PANO3DBENCH_ARTIFACTS=str(staging))
 
     assert download_checkpoint(checkpoint, tmp_path).read_bytes() == b"w"
 
@@ -144,7 +144,7 @@ def test_plan_separates_what_is_done_from_what_needs_the_network(
         ],
         system=["xvfb"],
     )
-    set_env(BENCHMARK_TOOLBOX_ARTIFACTS=str(staging))
+    set_env(PANO3DBENCH_ARTIFACTS=str(staging))
 
     steps = build_plan(spec, _FakeManager(exists=True))
     report = render_plan(spec, steps)

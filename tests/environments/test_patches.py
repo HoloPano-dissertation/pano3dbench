@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from benchmark_toolbox.environments.patches import apply_patches
+from pano3dbench.environments.patches import apply_patches
 
 ENV_YML = "\n".join(
     [

@@ -3,8 +3,8 @@ from urllib.error import URLError
 
 import pytest
 
-from benchmark_toolbox.environments.spec import CheckpointSpec
-from benchmark_toolbox.environments.steps import download_checkpoint
+from pano3dbench.environments.spec import CheckpointSpec
+from pano3dbench.environments.steps import download_checkpoint
 
 NEVER_FETCHED = "https://invalid.example/never-fetched"
 
@@ -16,7 +16,7 @@ def staged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]
     (artifacts / "model.pth").write_bytes(b"weights")
     repo = tmp_path / "repo"
     repo.mkdir()
-    monkeypatch.setenv("BENCHMARK_TOOLBOX_ARTIFACTS", str(artifacts))
+    monkeypatch.setenv("PANO3DBENCH_ARTIFACTS", str(artifacts))
     return artifacts, repo
 
 
@@ -36,7 +36,7 @@ def test_local_artifact_checksum_is_verified(staged: tuple[Path, Path]) -> None:
 def test_no_artifacts_dir_means_no_local_staging(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv("BENCHMARK_TOOLBOX_ARTIFACTS", raising=False)
+    monkeypatch.delenv("PANO3DBENCH_ARTIFACTS", raising=False)
     repo = tmp_path / "repo"
     repo.mkdir()
     spec = CheckpointSpec(url=NEVER_FETCHED, dest="ckpt/model.pth")

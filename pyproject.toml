@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "benchmark-toolbox"
+name = "pano3dbench"
 version = "0.1.0"
 description = "Pano3DBench: extensible benchmark for holistic indoor scene understanding models"
 readme = "README.md"
@@ -22,7 +22,7 @@ dev = [
 ]
 
 [project.scripts]
-benchmark-toolbox = "benchmark_toolbox.cli:main"
+pano3dbench = "pano3dbench.cli:main"
 
 [project.urls]
 Repository = "https://github.com/HoloPano-dissertation/pano3dbench"

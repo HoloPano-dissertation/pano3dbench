@@ -28,7 +28,7 @@ make smoke    # демонстрационный прогон без GPU и бе
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m benchmark_toolbox run --config configs/demo/smoke.json
+PYTHONPATH=src python -m pano3dbench run --config configs/demo/smoke.json
 ```
 
 ## Воспроизведение статьи
@@ -41,8 +41,8 @@ PYTHONPATH=src python -m benchmark_toolbox run --config configs/demo/smoke.json
 Строку статьи можно получить двумя путями, которые дают одинаковые числа:
 
 ```bash
-benchmark-toolbox run --config configs/igibson/runs/dpc.yaml          # через окружение модели
-benchmark-toolbox run --config configs/igibson/runs/dpc_rescore.yaml  # по готовым предсказаниям, без GPU
+pano3dbench run --config configs/igibson/runs/dpc.yaml          # через окружение модели
+pano3dbench run --config configs/igibson/runs/dpc_rescore.yaml  # по готовым предсказаниям, без GPU
 ```
 
 **Веса, обученные нами** (головы формы на iGibson):
@@ -53,7 +53,7 @@ benchmark-toolbox run --config configs/igibson/runs/dpc_rescore.yaml  # по г�
 
 ## Что делает комплекс
 
-`benchmark-toolbox run --config <cfg>` выполняет цепочку
+`pano3dbench run --config <cfg>` выполняет цепочку
 
 ```text
 конфигурация -> набор (перечень + эталон) -> модель -> показатели -> отчёт
@@ -81,7 +81,7 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 | [docs/methods.md](docs/methods.md) | три метода как конфигурации DPC, выбор конфигурации запуска |
 | [docs/metrics.md](docs/metrics.md) | каждый показатель, протокол классов, форма, свой показатель |
 | [docs/architecture.md](docs/architecture.md) | устройство, команды, окружения, кластер, подключение своей модели |
-| [src/benchmark_toolbox/metrics/README.md](src/benchmark_toolbox/metrics/README.md) | как по шагам считается каждый показатель |
+| [src/pano3dbench/metrics/README.md](src/pano3dbench/metrics/README.md) | как по шагам считается каждый показатель |
 | [configs/README.md](configs/README.md) | за что отвечает каждая конфигурация |
 | [scripts/README.md](scripts/README.md) | за что отвечает каждый скрипт и с какими аргументами он запускается |
 | [runners/README.md](runners/README.md) | договор раннера модели |
@@ -108,7 +108,7 @@ pano3dbench/
 ├── scripts/
 │   ├── dpc/                 перевод предсказаний DPC, правки кода DPC
 │   └── igibson/             эталон и цели MGN для iGibson
-├── src/benchmark_toolbox/   ядро
+├── src/pano3dbench/         ядро
 ├── tests/                   тесты: core, runners, environments, front3d
 ├── training/                обучение детектора и HorizonNet на 3D-FRONT
 └── pyproject.toml

@@ -9,4 +9,4 @@ __pycache__/
 
 artifacts/
 checkpoints/
-.benchmark_toolbox/
+.pano3dbench/

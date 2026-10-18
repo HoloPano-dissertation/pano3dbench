@@ -3,13 +3,13 @@ from typing import Union
 
 import pytest
 
-from benchmark_toolbox.domain import (
+from pano3dbench.domain import (
     BoundingBox3D,
     OrientedBox3D,
     SceneObject,
     SceneOutput,
 )
-from benchmark_toolbox.metrics import LayoutPenetration, LayoutViolationRate
+from pano3dbench.metrics import LayoutPenetration, LayoutViolationRate
 
 IDENTITY = (
     (1.0, 0.0, 0.0),

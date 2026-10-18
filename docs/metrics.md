@@ -16,9 +16,9 @@ metrics:
 Обозначения: **↑** — чем больше, тем лучше, **↓** — чем меньше, тем лучше. «Эталон» —
 нужна ли эталонная разметка (`requires_ground_truth`); показатели без эталона измеряют
 согласованность самого предсказания. «Уровень» — по сцене (усредняется по сценам) или по
-набору (считается один раз по всем сценам). Код: `src/benchmark_toolbox/metrics/`; как именно
+набору (считается один раз по всем сценам). Код: `src/pano3dbench/metrics/`; как именно
 считается каждый показатель, по шагам и с именами функций, — в
-[src/benchmark_toolbox/metrics/README.md](../src/benchmark_toolbox/metrics/README.md).
+[src/pano3dbench/metrics/README.md](../src/pano3dbench/metrics/README.md).
 
 | Модуль | Что в нём |
 |---|---|
@@ -155,7 +155,7 @@ metrics:
 
 ## Свой показатель
 
-1. Наследовать `BaseMetric` (`src/benchmark_toolbox/metrics/base.py`) и реализовать
+1. Наследовать `BaseMetric` (`src/pano3dbench/metrics/base.py`) и реализовать
    `compute(prediction, ground_truth) -> float`. Для показателя по набору —
    `dataset_level = True` и `compute_dataset(predictions, ground_truths)`. Если эталон не
    нужен — `requires_ground_truth = False`.
@@ -164,7 +164,7 @@ metrics:
    этого показатель доступен в конфигурации как `type: my_metric`.
 
 ```python
-from benchmark_toolbox.metrics.base import BaseMetric
+from pano3dbench.metrics.base import BaseMetric
 
 @BaseMetric.registry.register("bbox_count_ratio")
 class BBoxCountRatio(BaseMetric):

@@ -21,22 +21,22 @@ cat artifacts/echo/report.md
 ```
 
 Настоящий метод запускается так же, только окружение тяжелее: `env prepare` один раз на
-модель, затем `run` на каждый эксперимент. `benchmark-toolbox env doctor` показывает,
+модель, затем `run` на каждый эксперимент. `pano3dbench env doctor` показывает,
 какие бэкенды (conda, venv) и GPU есть на машине.
 
 ## Команды
 
 | Команда | Назначение |
 |---|---|
-| `benchmark-toolbox run --config <cfg>` | один эксперимент |
-| `benchmark-toolbox env prepare --env <spec>` | собрать окружение модели по спецификации |
-| `benchmark-toolbox env prepare --config <cfg>` | то же, окружение берётся из конфигурации эксперимента |
+| `pano3dbench run --config <cfg>` | один эксперимент |
+| `pano3dbench env prepare --env <spec>` | собрать окружение модели по спецификации |
+| `pano3dbench env prepare --config <cfg>` | то же, окружение берётся из конфигурации эксперимента |
 | `... --force` | собрать окружение заново |
 | `... --dry-run` | показать, что будет собрано и что требует сети, ничего не меняя |
 | `... --adopt` | признать готовым окружение, собранное иначе |
 | `... --verify` | заново проверить sha256 весов на диске |
-| `benchmark-toolbox env doctor` | бэкенды, GPU и настройки сборки |
-| `benchmark-toolbox env submit-script --env <spec>` | скрипт sbatch или bash для кластера |
+| `pano3dbench env doctor` | бэкенды, GPU и настройки сборки |
+| `pano3dbench env submit-script --env <spec>` | скрипт sbatch или bash для кластера |
 
 `env prepare` идемпотентна: повторный вызов с той же спецификацией окружение не пересобирает.
 
@@ -166,7 +166,7 @@ runner:
   wrapper: ["xvfb-run", "-a"]
 ```
 
-Окружения хранятся в `.benchmark_toolbox/` (вне git): `venvs/<имя>/`, `repos/<имя>/`
+Окружения хранятся в `.pano3dbench/` (вне git): `venvs/<имя>/`, `repos/<имя>/`
 (клоны и веса), `markers/<имя>.json`.
 
 ### Сборка без сети
@@ -176,12 +176,12 @@ runner:
 
 1. **Сначала план.** `env prepare --env <spec> --dry-run` показывает, что уже на месте
    и что требует сети. Так за один проход видно, какие файлы принести заранее.
-2. **Заранее положенные файлы.** С `BENCHMARK_TOOLBOX_ARTIFACTS=<папка>` веса сначала
+2. **Заранее положенные файлы.** С `PANO3DBENCH_ARTIFACTS=<папка>` веса сначала
    ищутся там по имени из `dest` и копируются вместо скачивания. Та же папка годится как
    локальный источник для pip (`detectron2 -f <папка>`). Абсолютный `dest` или `dest`
    с `~` берётся как есть — так раскладываются опорные сети torchvision в
    `~/.cache/torch/hub/checkpoints`, которые иначе качались бы при первом проходе.
-3. **Быстрый отказ.** С `BENCHMARK_TOOLBOX_OFFLINE=1` шаг, которому нужна сеть, сразу
+3. **Быстрый отказ.** С `PANO3DBENCH_OFFLINE=1` шаг, которому нужна сеть, сразу
    отказывает и называет файл, который нужно положить, вместо зависания на сокете.
 4. **Проверка.** `env prepare --verify` пересчитывает sha256 весов на диске и ловит два
    тихих сбоя: страницу входа, сохранённую под именем весов, и оборванную докачку.
@@ -196,7 +196,7 @@ runner:
 кластера репозиторий кладётся на него, затем создаётся и отправляется скрипт:
 
 ```bash
-benchmark-toolbox env submit-script \
+pano3dbench env submit-script \
   --env configs/environments/dpc.yaml \
   --config configs/demo/dpc.yaml \
   --gpus 1 --out run_dpc.sh

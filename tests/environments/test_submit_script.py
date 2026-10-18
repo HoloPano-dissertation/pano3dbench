@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from benchmark_toolbox.environments import EnvironmentSpec, generate_submit_script
+from pano3dbench.environments import EnvironmentSpec, generate_submit_script
 
 
 def test_slurm_script_for_gpu(load_env: Callable[[str], EnvironmentSpec]) -> None:
@@ -15,8 +15,8 @@ def test_slurm_script_for_gpu(load_env: Callable[[str], EnvironmentSpec]) -> Non
     assert "#SBATCH" in script
     assert "--gres=gpu:1" in script
     assert "module load anaconda" in script
-    assert "benchmark-toolbox env prepare --env configs/environments/dpc.yaml" in script
-    assert "benchmark-toolbox run --config configs/demo/dpc.yaml" in script
+    assert "pano3dbench env prepare --env configs/environments/dpc.yaml" in script
+    assert "pano3dbench run --config configs/demo/dpc.yaml" in script
 
 
 def test_bash_script_has_no_sbatch(load_env: Callable[[str], EnvironmentSpec]) -> None:
@@ -27,4 +27,4 @@ def test_bash_script_has_no_sbatch(load_env: Callable[[str], EnvironmentSpec]) -
         module_load="",
     )
     assert "#SBATCH" not in script
-    assert "benchmark-toolbox env prepare" in script
+    assert "pano3dbench env prepare" in script

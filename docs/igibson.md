@@ -28,12 +28,12 @@
 |---|---|---|
 | этот репозиторий | `git clone`, затем `make setup` | все |
 | набор iGibson | официальный сайт iGibson/BEHAVIOR (доступ по заявке, не распространяется), подготовка как в репозитории DeepPanoContext | 3 |
-| код и веса DeepPanoContext | `benchmark-toolbox env prepare --env configs/environments/dpc.yaml` | 2, 3 |
+| код и веса DeepPanoContext | `pano3dbench env prepare --env configs/environments/dpc.yaml` | 2, 3 |
 | наши веса голов формы (MGN, LDIF) | [выпуск `weights-v1`](https://github.com/HoloPano-dissertation/pano3dbench/releases/tag/weights-v1): `total3d-pano_mgn_igibson.pth`, `im3d-pano_ldif_igibson.pth`, `SHA256SUMS.txt` | 2, 3 для Im3D-Pano (обученной) и Total3D-Pano |
 | предсказания и эталон в JSON (`igibson_bench`, около 7 МБ) | получаются на уровне 2, см. ниже. В репозиторий пока не входят | 1 |
 
 Ниже `$TBX` — путь к этому репозиторию, `$DPC` — к развёрнутому DeepPanoContext
-(`$TBX/.benchmark_toolbox/repos/Pano3D` после `env prepare`).
+(`$TBX/.pano3dbench/repos/Pano3D` после `env prepare`).
 
 ## Какая конфигурация даёт какую строку
 
@@ -75,7 +75,7 @@
    ```
 4. Запустить:
    ```bash
-   benchmark-toolbox run --config configs/igibson/runs/dpc_rescore.yaml
+   pano3dbench run --config configs/igibson/runs/dpc_rescore.yaml
    cat artifacts/dpc_igibson/report.md
    ```
 
@@ -84,18 +84,18 @@
 ```bash
 cd $TBX && make setup
 
-benchmark-toolbox env prepare --env configs/environments/dpc.yaml --dry-run
-benchmark-toolbox env prepare --env configs/environments/dpc.yaml
-benchmark-toolbox env prepare --env configs/environments/dpc.yaml --verify
+pano3dbench env prepare --env configs/environments/dpc.yaml --dry-run
+pano3dbench env prepare --env configs/environments/dpc.yaml
+pano3dbench env prepare --env configs/environments/dpc.yaml --verify
 
 conda run -n Pano3D python $TBX/scripts/igibson/dpc_build_igibson_manifest.py \
     $DPC $DPC/data/igibson_bench $DPC/data/igibson/test.json
 
-benchmark-toolbox run --config configs/igibson/runs/dpc.yaml
-benchmark-toolbox run --config configs/igibson/runs/dpc_s20.yaml
-benchmark-toolbox run --config configs/igibson/runs/im3d.yaml
-benchmark-toolbox run --config configs/igibson/runs/im3d_trained.yaml
-benchmark-toolbox run --config configs/igibson/runs/total3d.yaml
+pano3dbench run --config configs/igibson/runs/dpc.yaml
+pano3dbench run --config configs/igibson/runs/dpc_s20.yaml
+pano3dbench run --config configs/igibson/runs/im3d.yaml
+pano3dbench run --config configs/igibson/runs/im3d_trained.yaml
+pano3dbench run --config configs/igibson/runs/total3d.yaml
 ```
 
 - `--dry-run` показывает, что уже на месте и что требует сети, ничего не меняя.

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from benchmark_toolbox.environments.patches import apply_patches
+from pano3dbench.environments.patches import apply_patches
 
 ORIGINAL = """import os
 

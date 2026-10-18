@@ -1,8 +1,8 @@
 import pytest
 from typing_extensions import TypeAlias
 
-from benchmark_toolbox.domain import BoundingBox3D, SceneObject, SceneOutput
-from benchmark_toolbox.metrics import (
+from pano3dbench.domain import BoundingBox3D, SceneObject, SceneOutput
+from pano3dbench.metrics import (
     CollisionRate,
     LayoutIoU3D,
     ObjectDetectionMAP,

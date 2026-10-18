@@ -7,15 +7,15 @@ from typing import NoReturn
 import _common as rc
 import pytest
 
-from benchmark_toolbox import SceneSample
-from benchmark_toolbox.config import ComponentConfig, ExperimentConfig, load_experiment_config
-from benchmark_toolbox.datasets.base import BaseDatasetLoader
-from benchmark_toolbox.domain import SceneOutput
-from benchmark_toolbox.environments import EnvironmentSpec, load_environment_spec
-from benchmark_toolbox.evaluator import Evaluator
-from benchmark_toolbox.metrics import CollisionRate
-from benchmark_toolbox.models.base import BaseSceneEstimator
-from benchmark_toolbox.models.subprocess import SubprocessSceneEstimator
+from pano3dbench import SceneSample
+from pano3dbench.config import ComponentConfig, ExperimentConfig, load_experiment_config
+from pano3dbench.datasets.base import BaseDatasetLoader
+from pano3dbench.domain import SceneOutput
+from pano3dbench.environments import EnvironmentSpec, load_environment_spec
+from pano3dbench.evaluator import Evaluator
+from pano3dbench.metrics import CollisionRate
+from pano3dbench.models.base import BaseSceneEstimator
+from pano3dbench.models.subprocess import SubprocessSceneEstimator
 
 
 @pytest.fixture

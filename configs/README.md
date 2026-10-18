@@ -3,9 +3,9 @@
 Здесь лежат три вида файлов:
 
 - **конфигурации запуска** — что считать: модель, набор, показатели. Запускаются командой
-  `benchmark-toolbox run --config <файл>`;
+  `pano3dbench run --config <файл>`;
 - **спецификации окружений** — как собрать окружение модели. Используются командой
-  `benchmark-toolbox env prepare --env <файл>`;
+  `pano3dbench env prepare --env <файл>`;
 - **конфигурации самого DPC** — их читает `main.py` DeepPanoContext, а не комплекс. Их
   кладут в `configs/` клона DeepPanoContext.
 

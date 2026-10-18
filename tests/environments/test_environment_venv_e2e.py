@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from benchmark_toolbox.domain import SceneSample
-from benchmark_toolbox.environments import load_environment_spec
-from benchmark_toolbox.environments.venv import VenvEnvironmentManager
-from benchmark_toolbox.models.subprocess import SubprocessSceneEstimator
+from pano3dbench.domain import SceneSample
+from pano3dbench.environments import load_environment_spec
+from pano3dbench.environments.venv import VenvEnvironmentManager
+from pano3dbench.models.subprocess import SubprocessSceneEstimator
 
 
 def test_prepare_and_run_echo_environment(tmp_path: Path, repo_root: Path) -> None:

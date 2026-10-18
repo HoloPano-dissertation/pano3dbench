@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from pathlib import Path
 
-from benchmark_toolbox.environments import EnvironmentSpec
-from benchmark_toolbox.environments.conda import CondaEnvironmentManager
-from benchmark_toolbox.environments.venv import VenvEnvironmentManager
+from pano3dbench.environments import EnvironmentSpec
+from pano3dbench.environments.conda import CondaEnvironmentManager
+from pano3dbench.environments.venv import VenvEnvironmentManager
 
 
 def test_conda_resolve_builds_conda_run_prefix(

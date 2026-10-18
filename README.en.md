@@ -25,7 +25,7 @@ Without `make` (standard library only):
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m benchmark_toolbox run --config configs/demo/smoke.json
+PYTHONPATH=src python -m pano3dbench run --config configs/demo/smoke.json
 ```
 
 ## Reproducing the paper
@@ -40,8 +40,8 @@ The documents in `docs/` are in Russian.
 A paper row can be produced along two routes that give the same numbers:
 
 ```bash
-benchmark-toolbox run --config configs/igibson/runs/dpc.yaml          # through the model environment
-benchmark-toolbox run --config configs/igibson/runs/dpc_rescore.yaml  # from converted predictions, no GPU
+pano3dbench run --config configs/igibson/runs/dpc.yaml          # through the model environment
+pano3dbench run --config configs/igibson/runs/dpc_rescore.yaml  # from converted predictions, no GPU
 ```
 
 **Weights trained by us** (shape heads on iGibson):
@@ -52,7 +52,7 @@ public in the DeepPanoContext release and are not redistributed here.
 
 ## What the toolbox does
 
-`benchmark-toolbox run --config <cfg>` runs
+`pano3dbench run --config <cfg>` runs
 
 ```text
 config -> dataset (manifest + ground truth) -> model -> metrics -> report
@@ -91,7 +91,7 @@ pano3dbench/
 ├── scripts/
 │   ├── dpc/                 DPC prediction conversion, DPC code patches
 │   └── igibson/             iGibson ground truth and MGN targets
-├── src/benchmark_toolbox/   the core
+├── src/pano3dbench/         the core
 ├── tests/                   tests: core, runners, environments, front3d
 ├── training/                detector and HorizonNet training on 3D-FRONT
 └── pyproject.toml

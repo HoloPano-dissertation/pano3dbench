@@ -21,7 +21,7 @@
 по готовым предсказаниям из папки, без окружения и без подпроцесса:
 
 ```bash
-benchmark-toolbox run --config configs/demo/smoke.json
+pano3dbench run --config configs/demo/smoke.json
 ```
 
 **echo** — весь путь «менеджер окружений → раннер в подпроцессе → показатели» на пустом
@@ -29,8 +29,8 @@ venv: раннер возвращает одну и ту же сцену. Есл
 искать ошибку: в окружении модели или в ядре.
 
 ```bash
-benchmark-toolbox env prepare --env configs/environments/echo.yaml
-benchmark-toolbox run --config configs/demo/echo_local.yaml
+pano3dbench env prepare --env configs/environments/echo.yaml
+pano3dbench run --config configs/demo/echo_local.yaml
 ```
 
 ## Три метода подробнее
