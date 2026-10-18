@@ -4,7 +4,7 @@ import argparse
 import logging
 from collections.abc import Sequence
 
-from benchmark_toolbox.config import ExperimentConfig
+from benchmark_toolbox.config import load_experiment_config
 from benchmark_toolbox.datasets import BaseDatasetLoader
 from benchmark_toolbox.evaluator import Evaluator
 from benchmark_toolbox.metrics import BaseMetric
@@ -72,11 +72,11 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _environment_source(args: argparse.Namespace) -> str | dict:
+def _environment_source(args: argparse.Namespace) -> "str | dict":
     if args.env:
         return args.env
     if args.config:
-        config = ExperimentConfig.fromfile(args.config)
+        config = load_experiment_config(args.config)
         environment = config.model.parameters.get("environment")
         if environment is None:
             raise SystemExit(
@@ -87,7 +87,7 @@ def _environment_source(args: argparse.Namespace) -> str | dict:
 
 
 def _run(config_path: str) -> int:
-    config = ExperimentConfig.fromfile(config_path)
+    config = load_experiment_config(config_path)
     model_parameters = dict(config.model.parameters)
     model_parameters.setdefault("seed", config.seed)
     estimator = BaseSceneEstimator.create(config.model.type, model_parameters)
@@ -99,7 +99,9 @@ def _run(config_path: str) -> int:
         for metric in config.metrics
     ]
     result = Evaluator(config, estimator, dataset, metrics).run()
-    print(f"Evaluated {result.scene_count} scene(s). Artifacts: {result.output_dir}")
+    print(
+        f"Evaluated {result.scene_count} scene(s). Artifacts: {result.output_dir}"
+    )
     return 0
 
 
