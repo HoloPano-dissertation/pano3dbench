@@ -1,8 +1,9 @@
 # Обучение на наборе панорам из 3D-FRONT
 
 Эта папка содержит только запуск детектора и HorizonNet и необходимые им
-модули загрузки/проверки. Набор и разметку готовит генератор
-[front3d-pano](https://github.com/HoloPano-dissertation/front3d-pano);
+модули загрузки/проверки. Набор, разметку и COCO готовит генератор
+[front3d-pano](https://github.com/HoloPano-dissertation/front3d-pano), цели HorizonNet —
+[scripts/front3d/adapters/export_horizonnet.py](../scripts/front3d/README.md);
 генератор от этих файлов не зависит.
 
 Нужно отдельное GPU-окружение проекта Pano3D: PyTorch, совместимые CUDA/cuDNN,

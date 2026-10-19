@@ -107,6 +107,7 @@ pano3dbench/
 ├── runners/                 раннеры моделей для изолированных окружений
 ├── scripts/
 │   ├── dpc/                 перевод предсказаний DPC, правки кода DPC
+│   ├── front3d/             форматы методов и проверка набора 3D-FRONT
 │   └── igibson/             эталон и цели MGN для iGibson
 ├── src/pano3dbench/         ядро
 ├── tests/                   тесты: core, runners, environments, front3d

@@ -11,8 +11,11 @@
 
 ## Что нужно
 
-- набор, собранный генератором `front3d-pano` (папка эксперимента: `coco/`, `horizonnet/`,
-  `dpc_scenes/`, `objects/`, `ground_truth/`, `manifests_gt/`, `state/classes.json`);
+- набор, собранный генератором `front3d-pano` (папка эксперимента: `coco/`, `objects/`,
+  `ground_truth/`, `manifests_gt/`, `state/classes.json`);
+- форматы методов, построенные по этому набору скриптами
+  [scripts/front3d/adapters/](../scripts/front3d/README.md): `horizonnet/`, вырезки
+  и цели LDIF/MGN в `objects/`, `dpc_dataset/`, `dpc_scenes/`;
 - окружение DeepPanoContext (`configs/environments/dpc.yaml`,
   см. [igibson.md](igibson.md#уровень-2-через-окружение-модели));
 - GPU для обучения и вывода.

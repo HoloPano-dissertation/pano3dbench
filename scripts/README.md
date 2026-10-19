@@ -8,8 +8,12 @@
 ```text
 scripts/
 ├── dpc/        работа с кодом и выводом DeepPanoContext, для любого набора
+├── front3d/    форматы методов и проверка набора 3D-FRONT, см. front3d/README.md
 └── igibson/    подготовка данных набора iGibson
 ```
+
+Скрипты `front3d/` запускаются в окружении генератора `front3d-pano`, а не в `Pano3D`,
+кроме сцен DPC: подробно — в [front3d/README.md](front3d/README.md).
 
 ## `dpc/` — для любого набора
 
@@ -93,7 +97,7 @@ conda run -n Pano3D python $TBX/scripts/igibson/mgn_make_gt.py $DPC --processes 
 | `--overwrite` | пересчитать уже готовые                            |
 | `--limit`     | обработать только первые N предметов, для проверки |
 
-Для 3D-FRONT такие же цели делает генератор `front3d-pano` (команда `mgn-points`).
+Для 3D-FRONT такие же цели делает `front3d/adapters/export_mgn_points.py`.
 
 Подробно, в каком порядке всё запускать: [docs/igibson.md](../docs/igibson.md),
 [docs/front3d.md](../docs/front3d.md).

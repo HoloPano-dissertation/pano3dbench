@@ -90,6 +90,7 @@ pano3dbench/
 ├── runners/                 model runners for isolated environments
 ├── scripts/
 │   ├── dpc/                 DPC prediction conversion, DPC code patches
+│   ├── front3d/             method formats and checks of the 3D-FRONT set
 │   └── igibson/             iGibson ground truth and MGN targets
 ├── src/pano3dbench/         the core
 ├── tests/                   tests: core, runners, environments, front3d
