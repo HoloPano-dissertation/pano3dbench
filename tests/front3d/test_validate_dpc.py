@@ -11,7 +11,7 @@ from validate_dpc import validate_dpc
 @pytest.fixture
 def exported_dataset(tmp_path):
     from PIL import Image
-    from front3d_pano.dataset.classes import DEFAULT_CLASSES as CLASSES
+    CLASSES = ["bed", "chair", "table"]
 
     def write(path, data, jsonl=False):
         path.parent.mkdir(parents=True, exist_ok=True)

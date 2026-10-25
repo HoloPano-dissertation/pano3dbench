@@ -78,6 +78,7 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 |---|---|
 | [docs/igibson.md](docs/igibson.md) | воспроизведение статьи на iGibson: команды, конфигурации, числа, оговорки |
 | [docs/front3d.md](docs/front3d.md) | воспроизведение на 3D-FRONT |
+| [docs/front3d_dataset.md](docs/front3d_dataset.md) | набор 3D-FRONT версии 1: состав, параметры, как собрать |
 | [docs/methods.md](docs/methods.md) | три метода как конфигурации DPC, выбор конфигурации запуска |
 | [docs/metrics.md](docs/metrics.md) | каждый показатель, протокол классов, форма, свой показатель |
 | [docs/architecture.md](docs/architecture.md) | устройство, команды, окружения, кластер, подключение своей модели |
@@ -103,6 +104,7 @@ pano3dbench/
 │   └── front3d/
 │       ├── front3d_to_igibson.json  соответствие классов 3D-FRONT словарю iGibson
 │       ├── dpc/             конфигурации DPC на 3D-FRONT: обучение компонент и вывод
+│       ├── splits/          состав набора версии 1: train/val/test и исключённые комнаты
 │       └── runs/            строки статьи по готовым предсказаниям
 ├── docs/                    документация
 ├── runners/                 раннеры моделей для изолированных окружений

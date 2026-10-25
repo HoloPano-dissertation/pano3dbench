@@ -14,10 +14,23 @@ from shapely.geometry import Point, shape
 
 from quality import image_checks, make_preview
 from front3d_pano.render.camera_policy import POLICY_VERSION
-from front3d_pano.render.glb_geometry import glb_triangles, floor_footprint, vertical_hits, glb_bounds
+from front3d_pano.render.glb_geometry import glb_triangles, floor_footprint, glb_bounds
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "adapters"))
 from layout_targets import polygon_targets
+
+
+def vertical_hits(triangles, xy):
+    a = triangles[:, 0]
+    u, v = triangles[:, 1] - a, triangles[:, 2] - a
+    d = np.asarray(xy) - a[:, :2]
+    det = u[:, 0] * v[:, 1] - u[:, 1] * v[:, 0]
+    valid = np.abs(det) > 1e-12
+    s, t = np.zeros(len(a)), np.zeros(len(a))
+    s[valid] = (d[valid, 0]*v[valid, 1] - d[valid, 1]*v[valid, 0]) / det[valid]
+    t[valid] = (u[valid, 0]*d[valid, 1] - u[valid, 1]*d[valid, 0]) / det[valid]
+    inside = valid & (s >= -1e-8) & (t >= -1e-8) & (s+t <= 1+1e-8)
+    return (a[:, 2] + s*u[:, 2] + t*v[:, 2])[inside]
 
 
 def audit(task):
