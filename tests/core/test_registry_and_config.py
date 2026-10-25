@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from pano3dbench.config import load_experiment_config
+from pano3dbench.config import ConfigError, ExperimentConfig
 from pano3dbench.datasets import BaseDatasetLoader, ManifestDatasetLoader
 from pano3dbench.models import BaseSceneEstimator, SubprocessSceneEstimator
 from pano3dbench.registry import ComponentRegistry
@@ -72,7 +72,7 @@ def test_relative_paths_resolve_against_the_config_directory(tmp_path: Path) -> 
             ],
         },
     )
-    config = load_experiment_config(config_path)
+    config = ExperimentConfig.fromfile(config_path)
 
     assert config.metrics[0].parameters["mesh_root"] == str(tmp_path / "meshes")
     assert config.model.parameters["prediction_dir"] == str(tmp_path / "pred")
@@ -105,7 +105,7 @@ def test_output_dir_resolution(tmp_path: Path) -> None:
         },
     )
 
-    config = load_experiment_config(config_path)
+    config = ExperimentConfig.fromfile(config_path)
     assert config.output_dir == tmp_path / "artifacts" / "dpc"
 
 
@@ -128,7 +128,7 @@ def test_per_class_expands_into_one_row_per_class(tmp_path: Path) -> None:
             ],
         },
     )
-    config = load_experiment_config(path)
+    config = ExperimentConfig.fromfile(path)
 
     assert [
         (m.parameters["name"], m.parameters["classes"]) for m in config.metrics
@@ -158,7 +158,7 @@ def test_metrics_are_inherited_and_locally_overridable(tmp_path: Path) -> None:
         },
     )
 
-    config = load_experiment_config(method_path)
+    config = ExperimentConfig.fromfile(method_path)
 
     assert config.seed == 7
     assert config.experiment_name == "method"
@@ -170,8 +170,8 @@ def test_metrics_are_inherited_and_locally_overridable(tmp_path: Path) -> None:
 def test_cyclic_extends_is_reported(tmp_path: Path) -> None:
     a = write_json(tmp_path / "a.json", {"extends": "b.json"})
     write_json(tmp_path / "b.json", {"extends": "a.json"})
-    with pytest.raises(ValueError, match="Cyclic"):
-        load_experiment_config(a)
+    with pytest.raises(ConfigError, match="Cyclic"):
+        ExperimentConfig.fromfile(a)
 
 
 def test_example_configs_exist() -> None:
@@ -180,5 +180,5 @@ def test_example_configs_exist() -> None:
 
 @pytest.mark.parametrize("path", EXAMPLE_CONFIGS, ids=lambda p: p.name)
 def test_every_example_config_loads(path: Path) -> None:
-    config = load_experiment_config(path)
+    config = ExperimentConfig.fromfile(path)
     assert config.metrics

@@ -7,7 +7,7 @@ VENV_PYTHON := $(VENV)/bin/python
 setup:
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
-	$(VENV_PYTHON) -m pip install -e ".[dev]"
+	$(VENV_PYTHON) -m pip install -e . --group dev
 
 test:
 	$(VENV_PYTHON) -m pytest

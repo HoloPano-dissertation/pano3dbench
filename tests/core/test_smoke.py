@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pano3dbench.config import load_experiment_config
+from pano3dbench.config import ExperimentConfig
 from pano3dbench.datasets import BaseDatasetLoader
 from pano3dbench.evaluator import Evaluator
 from pano3dbench.metrics import BaseMetric
@@ -8,7 +8,7 @@ from pano3dbench.models import BaseSceneEstimator
 
 
 def test_example_pipeline(repo_root: Path, tmp_path: Path) -> None:
-    config = load_experiment_config(repo_root / "configs/demo/smoke.json")
+    config = ExperimentConfig.fromfile(repo_root / "configs/demo/smoke.json")
     config = config.__class__(
         experiment_name=config.experiment_name,
         seed=config.seed,
