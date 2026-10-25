@@ -1,299 +1,122 @@
-# Benchmark Toolbox
+# Pano3DBench
 
 *[English version — README.en.md](README.en.md).*
 
 Единый **воспроизводимый** комплекс для запуска и сравнения методов целостного понимания
-трехмерной сцены помещения по одному панорамному изображению с обзором 360°. В
-сопровождающей статье этим комплексом сравниваются три метода — **DeepPanoContext
-(DPC)**, **Im3D-Pano** и **Total3D-Pano** — на наборе данных **iGibson** по единому
-протоколу оценивания.
+трёхмерной сцены помещения по одной панораме 360°. Им сравниваются три метода —
+**DeepPanoContext (DPC)**, **Im3D-Pano** и **Total3D-Pano** — по единой методике
+оценивания на двух наборах: **iGibson** и собственном наборе панорам **3D-FRONT**.
 
-Ключевая идея: эти три метода представляют собой **конфигурации одной программной базы
-DeepPanoContext**, а не три независимых репозитория. У них общие детектор объектов,
-модуль оценки трехмерного макета помещения (HorizonNet) и модуль оценки ориентированных
-параллелепипедов (BEN); различаются они только модулем восстановления формы (LDIF либо
-MGN) и наличием необязательной оптимизации на графовой сети сцены (Scene-GCN). Поэтому
-комплекс прогоняет их по одному пути и приводит любой результат к единому представлению
-`<макет, объекты, отношения>`.
+Ключевая идея: три метода — **конфигурации одной программной базы DeepPanoContext**,
+а не три независимых репозитория. У них общие детектор, оценка макета (HorizonNet) и
+оценка ориентированных рамок (BEN); различаются они головой формы (LDIF или MGN) и
+оптимизацией отношений на графовой сети сцены (Scene-GCN). Поэтому комплекс прогоняет их
+по одному пути и приводит любой результат к представлению `<макет, предметы, отношения>`.
 
 ## С чего начать
 
 ```bash
-make setup    # создает .venv и ставит пакет с зависимостями для тестов (один раз нужен интернет)
-make test     # модульные и дымовые тесты — должны завершиться словом "passed"
-make smoke    # демонстрационный прогон (без графического процессора и без моделей)
+make setup    # создаёт .venv и ставит пакет с зависимостями для тестов
+make test     # тесты, должны закончиться словом "passed"
+make smoke    # демонстрационный прогон без GPU и без моделей
 ```
 
-`make smoke` печатает `Evaluated 1 scene(s). Artifacts: .../artifacts/smoke` и пишет
-отчет в `artifacts/smoke/report.md` (на тестовой сцене показатели идеальные:
-`layout_iou_3d=1.0`, `object_map=1.0`, `collision_rate=0.0`).
+`make smoke` печатает `Evaluated 1 scene(s). Artifacts: .../artifacts/smoke` и пишет отчёт
+в `artifacts/smoke/report.md`.
 
-Без `make` (только стандартная библиотека, без установки пакета):
+Без `make` (только стандартная библиотека):
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m benchmark_toolbox run --config configs/examples/smoke.json
+PYTHONPATH=src python -m pano3dbench run --config configs/demo/smoke.json
 ```
+
+## Воспроизведение статьи
+
+| Набор | Документ | Что воспроизводится |
+|---|---|---|
+| iGibson | [docs/igibson.md](docs/igibson.md) | пять конфигураций методов, две контрольные строки на 11 классах, сравнение формы LDIF и MGN |
+| 3D-FRONT | [docs/front3d.md](docs/front3d.md) | обучение компонент на собственном наборе и оценка на его тестовой части |
+
+Строку статьи можно получить двумя путями, которые дают одинаковые числа:
+
+```bash
+pano3dbench run --config configs/igibson/runs/dpc.yaml          # через окружение модели
+pano3dbench run --config configs/igibson/runs/dpc_rescore.yaml  # по готовым предсказаниям, без GPU
+```
+
+**Веса, обученные нами** (головы формы на iGibson):
+[выпуск `weights-v1`](https://github.com/HoloPano-dissertation/pano3dbench/releases/tag/weights-v1) —
+`total3d-pano_mgn_igibson.pth` (MGN для Total3D-Pano), `im3d-pano_ldif_igibson.pth`
+(LDIF для обученной Im3D-Pano), `SHA256SUMS.txt`, `MANIFEST.md`. Веса DPC авторов
+общедоступны в выпуске DeepPanoContext и здесь не распространяются.
 
 ## Что делает комплекс
 
-Одна команда `benchmark-toolbox run --config <cfg>` выполняет цепочку:
+`pano3dbench run --config <cfg>` выполняет цепочку
 
 ```text
-конфигурация -> набор данных (перечень + эталонная разметка) -> модель -> метрики -> отчет
+конфигурация -> набор (перечень + эталон) -> модель -> показатели -> отчёт
 ```
 
-Ко всем методам применяется один и тот же код вычисления показателей, поэтому строки
-сравнения сопоставимы между собой. Каждый прогон пишет в `artifacts/<имя>/`:
+и пишет в `artifacts/<имя>/` предсказания, значения по сценам, сводку (среднее, медиана,
+95 % доверительный интервал), отчёт и `run.json` с конфигурацией, зерном, ревизией git
+и сведениями об окружении.
 
-- `predictions/<scene>.json` — предсказания в едином представлении;
-- `metrics.jsonl` — значения по каждой сцене;
-- `summary.json` — агрегаты (среднее, медиана, 95 % доверительный интервал бутстрэпа);
-- `report.md` — таблица для чтения человеком;
-- `run.json` — конфигурация, зерно генератора, ревизия git и сведения об окружении
-  (для воспроизводимости).
+Модель **не импортируется** в процесс комплекса: она работает в своём окружении и
+обменивается с ним JSON-файлами, поэтому методы могут требовать несовместимые версии
+Python, PyTorch и CUDA. Новый метод подключается раннером и спецификацией окружения,
+без изменения ядра.
 
-**Пример (без графического процессора, любая операционная система):**
+Протокол сравнения — **ориентированный 3D-IoU предметов при пороге 0.15**, а также IoU
+макета, столкновения предметов, выход предметов за макет и проникание. Форму, которая
+единственная различает LDIF и MGN, измеряют `mesh_chamfer` и `mesh_fscore`.
 
-```bash
-benchmark-toolbox run --config configs/examples/smoke.json          # готовое предсказание -> метрики за секунды
-benchmark-toolbox run --config configs/examples/echo_local.yaml     # весь путь через менеджер окружений (venv echo)
-```
+## Документация
 
-**Пример строки из статьи.** Вывод модели считается один раз на графическом процессоре,
-а оценить его затем можно двумя путями, дающими одинаковые числа:
-
-```bash
-# через изолированное окружение модели (штатный путь комплекса)
-benchmark-toolbox run --config configs/examples/dpc_igibson.yaml
-# либо переоценкой преобразованных предсказаний — без GPU, без модели, на любой ОС
-benchmark-toolbox run --config configs/examples/dpc_igibson_rescore.yaml
-```
-
-Полный рецепт воспроизведения — в [docs/REPRODUCING.md](docs/REPRODUCING.md).
-
-## Три метода
-
-| Метод | Чем отличается (в рамках программной базы DPC) | Форма | Scene-GCN |
-|---|---|---|---|
-| **DPC** | метод целиком | LDIF | включен |
-| **Im3D-Pano** | абляция DPC: оптимизация с учетом отношений отключена | LDIF | отключен |
-| **Total3D-Pano** | Im3D-Pano, где вместо LDIF используется MGN | MGN | отключен |
-
-Как запускать каждый — в [docs/models_guide.md](docs/models_guide.md).
-
-## Показатели и протокол
-
-Сравнение опирается на **ориентированную трехмерную меру пересечения объемов (3D-IoU)
-при пороге 0.15** — не 0.5, потому что при 0.5 значения были бы несопоставимы с
-опубликованными числами этих методов. Вычисляются: `layout_iou_3d`, посценовый
-`object_map`, общий по набору `object_map_dataset`, а также физическая правдоподобность
-— `collision_rate` (объект↔объект), `layout_violation_rate` и `layout_penetration`
-(объект↔макет). Качество восстановления формы, которое единственное и различает LDIF и
-MGN (по параллелепипедам они неразличимы), — `mesh_chamfer` и `mesh_fscore`
-(предсказанная сетка ↔ эталонная), см. [docs/shape_metric.md](docs/shape_metric.md).
-**Описание каждого показателя и порядок добавления своего показателя или своей модели**
-— в [docs/metrics.md](docs/metrics.md).
-
-## Обученные веса и воспроизведение результатов
-
-Каждое число из статьи воспроизводимо.
-
-- **Веса, обученные нами** (модули формы, обучены на iGibson, A100):
-  - `total3d-pano_mgn_igibson.pth` — MGN (`DensTMNet`) для **Total3D-Pano**
-    (конфигурация `configs/dpc/mgnet_igibson.yaml`);
-  - `im3d-pano_ldif_igibson.pth` — LDIF (LIEN+LDIF) для **Im3D-Pano (обученная)**
-    (конфигурация `configs/dpc/ldif_igibson_scratch.yaml`).
-- **Опубликованные веса DPC** (детектор, HorizonNet, BEN/Scene-GCN) — общедоступны, из
-  релиза DeepPanoContext; здесь не распространяются повторно (порядок сборки описан в
-  файле `MANIFEST.md` релиза).
-
-📦 **Скачать веса:**
-[релиз `weights-v1` на GitHub](https://github.com/HoloPano-dissertation/benchmark-toolbox/releases/tag/weights-v1)
-— `total3d-pano_mgn_igibson.pth`, `im3d-pano_ldif_igibson.pth` (плюс `SHA256SUMS.txt`,
-`MANIFEST.md`).
-
-**Как воспроизвести:**
-
-1. Показатели по параллелепипедам (5 строк) — либо через изолированное окружение модели,
-   либо переоценкой преобразованных предсказаний без графического процессора; оба пути
-   дают одни и те же числа. См. [docs/REPRODUCING.md](docs/REPRODUCING.md) и таблицу по
-   столбцам в [docs/results.md](docs/results.md).
-2. Показатели формы (расстояние Чамфера и F-мера, MGN против LDIF): выгрузить
-   предсказанные сетки в канонической системе координат (`--mode test`) и замкнутую
-   эталонную сетку через `model_path`, затем посчитать `mesh_chamfer` и `mesh_fscore` с
-   `normalize: canonical`. Полный рецепт — в
-   [docs/shape_metric.md](docs/shape_metric.md).
-
-Итоговые числа — в [docs/results.md](docs/results.md).
-
-## Принцип устройства
-
-Ядро работает с единым представлением результата:
-
-```text
-SceneOutput = <макет, объекты, отношения>
-```
-
-Каждая модель реализует контракт `BaseSceneEstimator.predict(sample)`, но **не
-импортируется** в процесс комплекса: адаптер запускает ее в отдельном окружении и
-обменивается с управляющим процессом файлами JSON. Благодаря этому модели могут
-использовать несовместимые между собой версии Python, PyTorch и CUDA. Точки расширения
-(`BaseSceneEstimator`, `BaseDatasetLoader`, `BaseMetric`, `BaseEnvironmentManager`)
-объявляются в реестре — новый метод подключается без изменения ядра. Схемы приведены в
-[docs/architecture.md](docs/architecture.md).
-
-Для узлов без доступа в сеть (например, вычислительного узла суперкомпьютера) задайте
-`BENCHMARK_TOOLBOX_ARTIFACTS=<каталог>`: тогда `env prepare` возьмет заранее уложенные
-веса и предобученные основы из этого каталога вместо загрузки из сети (см.
-[docs/usage.md](docs/usage.md)).
-
-## Готовые конфигурации запуска
-
-| Конфигурация | Что делает | Что требуется |
-|---|---|---|
-| `configs/examples/smoke.json` | показатели на тестовом предсказании | ничего (любая ОС, без GPU) |
-| `configs/examples/echo_local.yaml` | весь путь через менеджер окружений (venv echo) | ничего |
-| `configs/examples/*_igibson_rescore.yaml` | строка из статьи по преобразованным предсказаниям | преобразованные предсказания (без GPU) |
-| `configs/examples/{dpc,im3d,total3d,...}_igibson.yaml` | та же строка через окружение модели | Linux + conda + выложенный на диск вывод этого метода |
-| `configs/examples/dpc_igibson_pcf.yaml` | контрольная строка по 11 категориям против опубликованного mAP | преобразованные предсказания (без GPU) |
-| `configs/examples/shape_chamfer_rescore.yaml` | показатели формы, LDIF против MGN | выгруженные сетки (без GPU) |
-
-Конфигурация каждого метода наследует перечень показателей из `configs/protocols/`
-через `extends`, поэтому строки сравнения порождаются одним описанием протокола, а не
-его копиями.
+| Документ | О чём |
+|---|---|
+| [docs/igibson.md](docs/igibson.md) | воспроизведение статьи на iGibson: команды, конфигурации, числа, оговорки |
+| [docs/front3d.md](docs/front3d.md) | воспроизведение на 3D-FRONT |
+| [docs/methods.md](docs/methods.md) | три метода как конфигурации DPC, выбор конфигурации запуска |
+| [docs/metrics.md](docs/metrics.md) | каждый показатель, протокол классов, форма, свой показатель |
+| [docs/architecture.md](docs/architecture.md) | устройство, команды, окружения, кластер, подключение своей модели |
+| [src/pano3dbench/metrics/README.md](src/pano3dbench/metrics/README.md) | как по шагам считается каждый показатель |
+| [configs/README.md](configs/README.md) | за что отвечает каждая конфигурация |
+| [scripts/README.md](scripts/README.md) | за что отвечает каждый скрипт и с какими аргументами он запускается |
+| [runners/README.md](runners/README.md) | договор раннера модели |
+| [training/README.md](training/README.md) | обучение детектора и HorizonNet на 3D-FRONT |
+| [configs/front3d/dpc/README.md](configs/front3d/dpc/README.md) | обучение BEN, LDIF, MGN и Scene-GCN на 3D-FRONT |
 
 ## Состав репозитория
 
 ```text
-benchmark-toolbox/
-├── configs/                 конфигурации экспериментов и окружений моделей
-│   ├── protocols/           общие протоколы оценивания, наследуемые всеми методами
-│   ├── examples/            готовые к запуску конфигурации (smoke, echo, *_igibson_rescore, ...)
-│   └── environments/        описания изолированных окружений моделей (dpc, echo, holopano)
-├── data/examples/           перечни сцен и небольшие тестовые данные
-├── docs/                    документация (см. ниже)
-├── runners/                 адаптеры моделей для изолированных окружений (контракт + dpc/echo)
-├── scripts/                 пакетное преобразование предсказаний, сборка разметки, патчи DPC
-├── src/benchmark_toolbox/   реализация ядра на Python
-├── tests/                   модульные и дымовые тесты
-├── tools/                   подготовка собственного набора панорам из 3D-FRONT
-│   ├── 3dfront_panorama_renderer/  комнаты GLB -> панорамы (RGB, глубина, экземпляры)
-│   ├── 3dfront_dataset/            панорамы -> разметка в форматах, нужных сетям
-│   └── 3dfront_training/           разметка -> обученные веса
+pano3dbench/
+├── configs/
+│   ├── environments/        окружения моделей (dpc, echo)
+│   ├── protocols/           общий протокол показателей для любого набора
+│   ├── demo/                демонстрационные запуски без GPU и данных; scene/ — тестовая сцена
+│   ├── igibson/
+│   │   ├── protocols/       протокол контрольной строки на 11 классах
+│   │   ├── runs/            <метод>.yaml через окружение, <метод>_rescore.yaml по готовым предсказаниям
+│   │   └── dpc/             конфигурации самого DPC для iGibson
+│   └── front3d/
+│       ├── front3d_to_igibson.json  соответствие классов 3D-FRONT словарю iGibson
+│       └── dpc/             конфигурации обучения компонент DPC на 3D-FRONT
+├── docs/                    документация
+├── runners/                 раннеры моделей для изолированных окружений
+├── scripts/
+│   ├── dpc/                 перевод предсказаний DPC, правки кода DPC
+│   ├── front3d/             форматы методов и проверка набора 3D-FRONT
+│   └── igibson/             эталон и цели MGN для iGibson
+├── src/pano3dbench/         ядро
+├── tests/                   тесты: core, runners, environments, front3d
+├── training/                обучение детектора и HorizonNet на 3D-FRONT
 └── pyproject.toml
 ```
 
-## Документация
-
-- [docs/usage.md](docs/usage.md) — как запускать: конфигурации, наборы данных,
-  окружения, артефакты.
-- [docs/metrics.md](docs/metrics.md) — **описание каждого показателя и порядок
-  добавления своего показателя или своей модели** (расширяемость).
-- [docs/architecture.md](docs/architecture.md) — компоненты, контракты, точки
-  расширения.
-- [docs/results.md](docs/results.md) — итоговые числа статьи (iGibson, 500 сцен) и
-  выводы.
-- [docs/shape_metric.md](docs/shape_metric.md) — показатели формы (расстояние Чамфера,
-  F-мера) и выгрузка сеток.
-- [docs/REPRODUCING.md](docs/REPRODUCING.md) — как воспроизвести числа статьи.
-- [docs/models_guide.md](docs/models_guide.md) — три метода как конфигурации одной
-  программной базы.
-- [tools/README.md](tools/README.md) — конвейер подготовки собственного набора панорам
-  из 3D-FRONT (в статье не используется).
-
-## Приложение: подготовка набора панорам из 3D-FRONT
-
-> **В статье этот набор не используется.** Все приведенные выше числа получены на
-> iGibson. Конвейер ниже подготавливает собственный набор панорам из 3D-FRONT и
-> приводится как отдельный, уже работающий инструмент комплекса; результатов на нем
-> в статье нет.
-
-Набор собирается из переработанных комнат в формате GLB — у нас это
-[huanngzh/3D-Front](https://huggingface.co/datasets/huanngzh/3D-Front) — в приведенной
-ниже последовательности. Каждый шаг воспроизводим из одного лишь исходного архива:
-промежуточные артефакты не требуются, а размер результата определяется тем источником,
-на который указывает шаг 3. Состав поставляемого здесь разбиения записан в
-[`splits/excluded_rooms.json`](tools/3dfront_dataset/splits/excluded_rooms.json).
-
-```bash
-# 1. Скачать и распаковать 3D-FRONT-SCENE из набора выше, а также два архива исходного
-#    3D-FRONT: описания сцен (3D-FRONT.zip, 2.1 ГБ) и текстуры (3D-FRONT-texture.zip,
-#    1.8 ГБ). Переработка не содержит ни архитектуры комнат, ни материалов к ней.
-
-# 2. Прочитать точные покомнатные масштабы и классы объектов из исходного релиза.
-python tools/3dfront_dataset/source_metadata.py \
-  /data/raw/3D-FRONT.zip /data/3D-FRONT-SCENE /data/source_metadata.json \
-  --rooms /data/3D-Front/valid_room_ids.json
-
-# 3. Зафиксировать разбиение без пересечения по домам: здесь же выполняются проверка
-#    геометрии, проверка метрического масштаба и расстановка камер, а каждая
-#    отбракованная комната записывается с причиной отказа.
-python tools/3dfront_dataset/prepare.py freeze /data/3D-FRONT-SCENE \
-  --metadata /data/source_metadata.json --rooms /data/3D-Front/valid_room_ids.json
-
-# 4. Создать эксперимент по этому разбиению.
-python tools/3dfront_dataset/prepare.py init /data/3D-FRONT-SCENE /data/front3d
-
-# 5. Собрать архитектуру комнат из исходного релиза: стены, полы, потолки, плинтусы,
-#    откосы и встроенные шкафы вместе с их материалами.
-python tools/3dfront_dataset/scene_architecture.py \
-  /data/raw/3D-FRONT.zip /data/raw/3D-FRONT-texture.zip /data/3D-FRONT-SCENE - \
-  /data/front3d-architecture --rooms /data/front3d/state/rooms-all.json \
-  --metadata /data/source_metadata.json
-
-# 6. Сначала спланировать камеры: план явно завершается отказом на комнате, которую
-#    снять не удается.
-python tools/3dfront_panorama_renderer/run_batch.py \
-  /data/front3d/splits/rooms.jsonl /data/front3d/plan --views 4 --plan-only \
-  --architecture-root /data/front3d-architecture
-
-# 7. Отрисовать панорамы, когда план прошел без отказов.
-python tools/3dfront_panorama_renderer/run_batch.py \
-  /data/front3d/splits/rooms.jsonl /data/front3d/outputs --views 4 --samples 96 \
-  --architecture-root /data/front3d-architecture \
-  --ambient 4.0 --light-temperature 2700-5000
-
-# 8. Перевести в исключения комнаты, которые отверг рендерер.
-python tools/3dfront_dataset/prepare.py reject /data/front3d \
-  --rendered /data/front3d/outputs \
-  --reasons /data/front3d/state/render-failure-reasons.json
-
-# 9. Выгрузить метрическую эталонную разметку, отношения, объекты, COCO, цели для
-#    оценки макета и входные данные DPC.
-python tools/3dfront_dataset/prepare.py export /data/front3d \
-  --scale-table /data/source_metadata.json --class-table /data/source_metadata.json
-
-# 10. Проверить согласованность выгрузок между собой.
-python tools/3dfront_dataset/prepare.py validate /data/front3d
-
-# 11. Собрать сцены в том виде, в котором их читают сравниваемые методы.
-PYTHONPATH=/path/to/Pano3D python tools/3dfront_training/export_dpc_scenes.py \
-  /data/front3d /data/front3d/dpc_scenes
-```
-
-Результат определяется четырьмя свойствами источника, и все они учтены в шагах выше.
-Каждая комната нормирована собственным масштабом, поэтому метры восстанавливаются по
-покомнатному масштабу, прочитанному из исходного релиза; привязка по высоте потолка
-служит запасным вариантом и применяется, только когда точного масштаба нет.
-Архитектуры комнат переработка не содержит: у трети комнат нет стен, а уцелевшие
-поверхности лишены материалов, поэтому стены, полы и потолки собираются из исходного
-релиза и подаются отрисовщику отдельно. Камеру нельзя ставить на мебель, а по одному
-лишь габариту комнаты этого не выразить. Объект, пересекающий шов
-панорамы, размечается в кадре, сдвинутом на половину ширины, — так же, как сравниваемые
-методы запускают свой детектор.
-
-Чтобы собрать набор из большей части 3D-FRONT, выполните шаг 3 на более крупном
-источнике: `freeze` запишет новое разбиение и новую политику исключений, а все
-последующие шаги будут ей следовать. Для замены существующего разбиения нужен ключ
-`--force`, поскольку результаты до и после относятся к разным множествам сцен.
-
-Причины исключения каждой комнаты приведены в
-[`splits/excluded_rooms.json`](tools/3dfront_dataset/splits/excluded_rooms.json).
-Отрисовщик, выгрузка набора данных и точки входа для обучения описаны отдельно:
-[3dfront_panorama_renderer](tools/3dfront_panorama_renderer/README.md),
-[3dfront_dataset](tools/3dfront_dataset/README.md),
-[3dfront_training](tools/3dfront_training/README.md).
+Набор панорам 3D-FRONT собирается отдельным генератором
+[front3d-pano](https://github.com/HoloPano-dissertation/front3d-pano).
 
 ## Лицензия
 

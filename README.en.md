@@ -1,265 +1,105 @@
-# Benchmark Toolbox
+# Pano3DBench
 
-*[Русская версия — README.md](README.md) (основная).*
+*[Русская версия — README.md](README.md) (main).*
 
 A single, **reproducible** framework for running and comparing holistic indoor-scene
-understanding methods from one 360° panorama. The accompanying paper compares three
-methods — **DeepPanoContext (DPC)**, **Im3D-Pano**, and **Total3D-Pano** — on the
-**iGibson** dataset under one evaluation protocol.
+understanding methods from one 360° panorama. It compares three methods —
+**DeepPanoContext (DPC)**, **Im3D-Pano** and **Total3D-Pano** — under one evaluation
+protocol on two sets: **iGibson** and our own **3D-FRONT** panorama set.
 
-Key idea: the three methods are **configurations of a single DeepPanoContext code
-base**, not three separate repositories. They share a detector, a layout estimator
-(HorizonNet), and a 3D box estimator (BEN), and differ only in the shape head (LDIF vs.
-MGN) and the optional Scene-GCN relation optimization. The toolbox therefore runs them
-through one path and maps every output to a single format,
-`<layout, objects, relations>`.
+Key idea: the three methods are **configurations of one DeepPanoContext code base**, not
+three separate repositories. They share the detector, the layout estimator (HorizonNet)
+and the oriented-box estimator (BEN), and differ in the shape head (LDIF or MGN) and in the
+relation optimization on the scene graph network (Scene-GCN). So the toolbox runs them
+along one path and maps every result to one representation, `<layout, objects, relations>`.
 
 ## Getting started
 
 ```bash
-make setup    # creates .venv and installs the package with test deps (needs internet once)
-make test     # unit and smoke tests — should finish with "passed"
-make smoke    # demo benchmark (no GPU, no models)
+make setup    # creates .venv and installs the package with test dependencies
+make test     # tests, must end with "passed"
+make smoke    # demo run without a GPU or models
 ```
 
-`make smoke` prints `Evaluated 1 scene(s). Artifacts: .../artifacts/smoke` and writes
-the report to `artifacts/smoke/report.md` (perfect metrics on a fixture scene:
-`layout_iou_3d=1.0`, `object_map=1.0`, `collision_rate=0.0`).
-
-Without `make` (standard library only, no install):
+Without `make` (standard library only):
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m benchmark_toolbox run --config configs/examples/smoke.json
+PYTHONPATH=src python -m pano3dbench run --config configs/demo/smoke.json
 ```
 
-## What the benchmark does
+## Reproducing the paper
 
-A single `benchmark-toolbox run --config <cfg>` runs the chain:
-
-```text
-config -> dataset (manifest + ground truth) -> estimator (model) -> metrics -> report
-```
-
-The same metric code is applied to every method, so the comparison rows are
-commensurable. Each run writes to `artifacts/<name>/`:
-
-- `predictions/<scene>.json` — unified predictions;
-- `metrics.jsonl` — per-scene values;
-- `summary.json` — aggregates (mean / median / 95% bootstrap CI);
-- `report.md` — a human-readable table;
-- `run.json` — config, seed, git revision, and environment provenance (for reproducibility).
-
-**Example (no GPU, any OS):**
-
-```bash
-benchmark-toolbox run --config configs/examples/smoke.json          # fixture prediction -> metrics in seconds
-benchmark-toolbox run --config configs/examples/echo_local.yaml     # end-to-end path through the environment manager (venv echo)
-```
-
-**Example of a paper row.** Inference runs once on a GPU; scoring it is then either of
-two routes, which produce identical numbers:
-
-```bash
-# through the isolated model environment (the framework's own path)
-benchmark-toolbox run --config configs/examples/dpc_igibson.yaml
-# or by re-scoring the converted predictions — no GPU, no model, any OS
-benchmark-toolbox run --config configs/examples/dpc_igibson_rescore.yaml
-```
-
-See [docs/REPRODUCING.md](docs/REPRODUCING.md) for the full reproduction recipe.
-
-## The three methods
-
-| Method | What differs (within the DPC code base) | Shape | Relation Scene-GCN |
-|---|---|---|---|
-| **DPC** | full method | LDIF | on |
-| **Im3D-Pano** | DPC ablation: relation optimization off | LDIF | off |
-| **Total3D-Pano** | Im3D-Pano with MGN instead of LDIF | MGN | off |
-
-How to run each is in [docs/models_guide.md](docs/models_guide.md).
-
-## Metrics and protocol
-
-The comparison uses **oriented 3D-IoU of objects at threshold 0.15** (not 0.5, which
-would be incomparable with the published numbers for these methods). Reported metrics:
-`layout_iou_3d`, per-scene `object_map`, dataset-level `object_map_dataset`, and
-physical plausibility — `collision_rate` (object↔object), `layout_violation_rate` and
-`layout_penetration` (object↔layout). Shape quality (which separates LDIF and MGN —
-indistinguishable on boxes) — `mesh_chamfer` and `mesh_fscore` (predicted mesh ↔ GT
-mesh), see [docs/shape_metric.md](docs/shape_metric.md). **A description of every metric
-and how to add your own metric/model** — [docs/metrics.md](docs/metrics.md).
-
-## Trained weights and reproducing the results
-
-Every number in the paper is reproducible.
-
-- **Weights trained by us** (shape heads, trained on iGibson, A100):
-  - `total3d-pano_mgn_igibson.pth` — MGN (`DensTMNet`) for **Total3D-Pano** (config `configs/dpc/mgnet_igibson.yaml`);
-  - `im3d-pano_ldif_igibson.pth` — LDIF (LIEN+LDIF) for **Im3D-Pano (trained)** (config `configs/dpc/ldif_igibson_scratch.yaml`).
-- **DPC released weights** (detector, HorizonNet, BEN/Scene-GCN) — public, from the DeepPanoContext release; not redistributed here (the assembly recipe is in the release `MANIFEST.md`).
-
-📦 **Download weights:** [GitHub Release `weights-v1`](https://github.com/HoloPano-dissertation/benchmark-toolbox/releases/tag/weights-v1) — `total3d-pano_mgn_igibson.pth`, `im3d-pano_ldif_igibson.pth` (+ `SHA256SUMS.txt`, `MANIFEST.md`).
-
-**How to reproduce:**
-1. Box metrics (5 rows) — either through the model's isolated environment or by re-scoring the converted predictions without a GPU; both give the same numbers. See [docs/REPRODUCING.md](docs/REPRODUCING.md) and the per-column table in [docs/results.md](docs/results.md).
-2. Shape metric (Chamfer/F-score, MGN vs. LDIF): export canonical predicted meshes (`--mode test`) + watertight GT via `model_path`, then `mesh_chamfer`/`mesh_fscore` with `normalize: canonical` — the full recipe is in [docs/shape_metric.md](docs/shape_metric.md).
-
-Final numbers are in [docs/results.md](docs/results.md).
-
-## Architecture principle
-
-The core works with a single output representation:
-
-```text
-SceneOutput = <layout, objects, relations>
-```
-
-Each model implements the `BaseSceneEstimator.predict(sample)` contract but is **not
-imported** into the toolbox process: an adapter runs it in a separate environment and
-exchanges JSON files with the runner process. This lets models use incompatible
-versions of Python, PyTorch, and CUDA. Extension points (`BaseSceneEstimator`,
-`BaseDatasetLoader`, `BaseMetric`, `BaseEnvironmentManager`) are registered in a
-registry — a new method is plugged in without touching the core. Diagrams are in
-[docs/architecture.md](docs/architecture.md).
-
-For network-restricted hosts (e.g. an offline HPC node), set
-`BENCHMARK_TOOLBOX_ARTIFACTS=<dir>` so `env prepare` uses pre-staged weights/backbones
-from that directory instead of downloading them (see [docs/usage.md](docs/usage.md)).
-
-## Available run configs
-
-| Config | What it does | Requires |
+| Set | Document | What is reproduced |
 |---|---|---|
-| `configs/examples/smoke.json` | metrics on a fixture prediction | nothing (any OS, no GPU) |
-| `configs/examples/echo_local.yaml` | end-to-end path through the environment manager (venv echo) | nothing |
-| `configs/examples/*_igibson_rescore.yaml` | a paper row from converted predictions | converted predictions (no GPU) |
-| `configs/examples/{dpc,im3d,total3d,...}_igibson.yaml` | the same row through the model environment | Linux + conda + that method's inference on disk |
-| `configs/examples/dpc_igibson_pcf.yaml` | the 11-category control row against published mAP | converted predictions (no GPU) |
-| `configs/examples/shape_chamfer_rescore.yaml` | shape metric, LDIF vs MGN | exported meshes (no GPU) |
+| iGibson | [docs/igibson.md](docs/igibson.md) | five method configurations, two 11-class control rows, the LDIF vs MGN shape comparison |
+| 3D-FRONT | [docs/front3d.md](docs/front3d.md) | training the components on our set and evaluating on its test part |
 
-Every method config inherits its metric list from `configs/protocols/` via `extends`, so
-the comparison rows are produced by one protocol definition instead of copies of it.
+The documents in `docs/` are in Russian.
+
+A paper row can be produced along two routes that give the same numbers:
+
+```bash
+pano3dbench run --config configs/igibson/runs/dpc.yaml          # through the model environment
+pano3dbench run --config configs/igibson/runs/dpc_rescore.yaml  # from converted predictions, no GPU
+```
+
+**Weights trained by us** (shape heads on iGibson):
+[release `weights-v1`](https://github.com/HoloPano-dissertation/pano3dbench/releases/tag/weights-v1) —
+`total3d-pano_mgn_igibson.pth` (MGN for Total3D-Pano), `im3d-pano_ldif_igibson.pth` (LDIF
+for the trained Im3D-Pano), `SHA256SUMS.txt`, `MANIFEST.md`. The authors' DPC weights are
+public in the DeepPanoContext release and are not redistributed here.
+
+## What the toolbox does
+
+`pano3dbench run --config <cfg>` runs
+
+```text
+config -> dataset (manifest + ground truth) -> model -> metrics -> report
+```
+
+and writes to `artifacts/<name>/` the predictions, per-scene values, a summary (mean,
+median, 95% confidence interval), a report and `run.json` with the config, seed, git
+revision and environment info.
+
+The model is **never imported** into the toolbox process: it runs in its own environment
+and exchanges JSON files, so methods may need incompatible Python, PyTorch and CUDA
+versions. A new method plugs in through a runner and an environment spec, with no change
+to the core.
+
+The comparison protocol is **oriented 3D-IoU of objects at threshold 0.15**, plus layout
+IoU, object collisions, objects outside the layout and penetration. Shape, the only thing
+that separates LDIF from MGN, is measured by `mesh_chamfer` and `mesh_fscore`.
 
 ## Layout
 
 ```text
-benchmark-toolbox/
-├── configs/                 experiment and model-environment configs
-│   ├── protocols/           the shared evaluation protocols every method inherits
-│   ├── examples/            ready-to-run configs (smoke, echo, *_igibson_rescore, ...)
-│   └── environments/        isolated model-environment specs (dpc, echo, holopano)
-├── data/examples/           manifests and small test data
-├── docs/                    documentation (see below)
-├── runners/                 model adapters for isolated environments (contract + dpc/echo)
-├── scripts/                 prediction batch-conversion, GT/manifest building, DPC patches
-├── src/benchmark_toolbox/   Python core implementation
-├── tests/                   unit and smoke tests
-├── tools/                   building our own 3D-FRONT panorama set
-│   ├── 3dfront_panorama_renderer/  GLB rooms -> panoramas (RGB, depth, instances)
-│   ├── 3dfront_dataset/            panoramas -> annotation in the formats the nets read
-│   └── 3dfront_training/           annotation -> trained weights
+pano3dbench/
+├── configs/
+│   ├── environments/        model environments (dpc, echo)
+│   ├── protocols/           shared metric protocol for any set
+│   ├── demo/                demo runs without a GPU or data; scene/ is the test scene
+│   ├── igibson/
+│   │   ├── protocols/       protocol of the 11-class control row
+│   │   ├── runs/            <method>.yaml through the environment, <method>_rescore.yaml from converted predictions
+│   │   └── dpc/             DPC's own configs for iGibson
+│   └── front3d/
+│       ├── front3d_to_igibson.json  mapping of 3D-FRONT classes to the iGibson vocabulary
+│       └── dpc/             training configs of the DPC components on 3D-FRONT
+├── docs/                    documentation (Russian); configs/README.md and scripts/README.md list every config and script
+├── runners/                 model runners for isolated environments
+├── scripts/
+│   ├── dpc/                 DPC prediction conversion, DPC code patches
+│   ├── front3d/             method formats and checks of the 3D-FRONT set
+│   └── igibson/             iGibson ground truth and MGN targets
+├── src/pano3dbench/         the core
+├── tests/                   tests: core, runners, environments, front3d
+├── training/                detector and HorizonNet training on 3D-FRONT
 └── pyproject.toml
 ```
 
-## Documentation
-
-- [docs/usage.md](docs/usage.md) — how to run: configs, datasets, environments, artifacts.
-- [docs/metrics.md](docs/metrics.md) — **a description of every metric + how to add your own metric and model** (extensibility).
-- [docs/architecture.md](docs/architecture.md) — components, contracts, extension points.
-- [docs/results.md](docs/results.md) — final paper numbers (iGibson, 500 scenes) + findings.
-- [docs/shape_metric.md](docs/shape_metric.md) — shape metric (Chamfer/F-score) and mesh export.
-- [docs/REPRODUCING.md](docs/REPRODUCING.md) — how to reproduce the paper numbers.
-- [docs/models_guide.md](docs/models_guide.md) — the three methods as configurations of one code base.
-- [tools/README.md](tools/README.md) — pipeline for building our own 3D-FRONT panorama set (not used in the paper).
-
-## Appendix: building the 3D-FRONT panorama set
-
-> **This set is not used in the paper.** Every number above was measured on iGibson.
-> The pipeline below builds our own panorama set out of 3D-FRONT and is documented as
-> a separate, already working tool of the toolbox; no result in the paper rests on it.
-
-The benchmark is built from a source of reworked GLB rooms - ours come from
-[huanngzh/3D-Front](https://huggingface.co/datasets/huanngzh/3D-Front) - with the
-sequence below. Every step is reproducible from the source archive alone; no
-intermediate artefact is required, and the size of the result follows from the source
-you point step 3 at. The composition of the split shipped here is recorded in
-[`splits/excluded_rooms.json`](tools/3dfront_dataset/splits/excluded_rooms.json).
-
-```bash
-# 1. Download and unpack 3D-FRONT-SCENE from the dataset above, and two archives of
-#    the original 3D-FRONT: the scene descriptions (3D-FRONT.zip, 2.1 GB) and the
-#    textures (3D-FRONT-texture.zip, 1.8 GB). The rework carries neither the
-#    architecture of the rooms nor its materials.
-
-# 2. Read the exact per-room scales and the object classes out of the original release.
-python tools/3dfront_dataset/source_metadata.py \
-  /data/raw/3D-FRONT.zip /data/3D-FRONT-SCENE /data/source_metadata.json \
-  --rooms /data/3D-Front/valid_room_ids.json
-
-# 3. Freeze the house-disjoint split: geometry, metric checks and camera placement are
-#    all applied here, and every rejected room is recorded with its reason.
-python tools/3dfront_dataset/prepare.py freeze /data/3D-FRONT-SCENE \
-  --metadata /data/source_metadata.json --rooms /data/3D-Front/valid_room_ids.json
-
-# 4. Create the experiment from that split.
-python tools/3dfront_dataset/prepare.py init /data/3D-FRONT-SCENE /data/front3d
-
-# 5. Rebuild the architecture of the rooms from the original release: walls, floors,
-#    ceilings, baseboards, window reveals and built-in cabinets, with their materials.
-python tools/3dfront_dataset/scene_architecture.py \
-  /data/raw/3D-FRONT.zip /data/raw/3D-FRONT-texture.zip /data/3D-FRONT-SCENE - \
-  /data/front3d-architecture --rooms /data/front3d/state/rooms-all.json \
-  --metadata /data/source_metadata.json
-
-# 6. Plan the cameras first; the plan fails loudly on a room it cannot photograph.
-python tools/3dfront_panorama_renderer/run_batch.py \
-  /data/front3d/splits/rooms.jsonl /data/front3d/plan --views 4 --plan-only \
-  --architecture-root /data/front3d-architecture
-
-# 7. Render the panoramas once the plan is clean.
-python tools/3dfront_panorama_renderer/run_batch.py \
-  /data/front3d/splits/rooms.jsonl /data/front3d/outputs --views 4 --samples 96 \
-  --architecture-root /data/front3d-architecture \
-  --ambient 4.0 --light-temperature 2700-5000
-
-# 8. Move the rooms the renderer refused into the reviewed exclusions.
-python tools/3dfront_dataset/prepare.py reject /data/front3d \
-  --rendered /data/front3d/outputs \
-  --reasons /data/front3d/state/render-failure-reasons.json
-
-# 9. Export metric ground truth, relations, objects, COCO, layout targets and DPC inputs.
-python tools/3dfront_dataset/prepare.py export /data/front3d \
-  --scale-table /data/source_metadata.json --class-table /data/source_metadata.json
-
-# 8. Check the exports against each other.
-python tools/3dfront_dataset/prepare.py validate /data/front3d
-
-# 9. Build the scenes the compared methods read natively.
-PYTHONPATH=/path/to/Pano3D python tools/3dfront_training/export_dpc_scenes.py \
-  /data/front3d /data/front3d/dpc_scenes
-```
-
-Four properties of the source shape the result and are handled in the steps above.
-Each room is normalised on its own, so metres are restored from a per-room scale read
-out of the original release; the ceiling anchor is only the fallback when no exact
-scale exists. The `floor.glb` of a room often carries the slab of the whole dwelling,
-so the renderer clips the recovered contour to the packaged room shell. A camera must
-not be placed over furniture, which the room shell alone cannot express. An object
-crossing the panorama seam is annotated in the frame rolled by half the width, the way
-the compared methods run their detector.
-
-To build the benchmark from a larger part of 3D-FRONT, run step 3 against the bigger
-source: `freeze` writes a new split and a new exclusion policy, and every later step
-follows it. Replacing an existing split needs `--force`, because results from before and
-after then describe different sets.
-
-Reasons for every excluded room are in
-[`splits/excluded_rooms.json`](tools/3dfront_dataset/splits/excluded_rooms.json).
-The renderer, the dataset export and the training entry points are documented
-separately in [3dfront_panorama_renderer](tools/3dfront_panorama_renderer/README.md),
-[3dfront_dataset](tools/3dfront_dataset/README.md) and
-[3dfront_training](tools/3dfront_training/README.md).
+The 3D-FRONT panorama set is built by a separate generator,
+[front3d-pano](https://github.com/HoloPano-dissertation/front3d-pano).
 
 ## License
 

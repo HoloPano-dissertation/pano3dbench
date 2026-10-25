@@ -12,7 +12,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _common as rc  # noqa: E402
 
 
+def camera_position(data) -> list:
+    camera = data.get("camera")
+    position = dict.get(camera, "pos") if isinstance(camera, dict) else None
+    if position is None:
+        return [0.0, 0.0, 0.0]
+    return [float(value) for value in list(position)[:3]]
+
+
+def axes_as_rows(basis) -> list:
+    rows = [[float(value) for value in row] for row in basis]
+    return [[rows[row][column] for row in range(3)] for column in range(3)]
+
+
 def convert_data_pkl(data) -> dict:
+    origin = camera_position(data)
     objects = []
     for item in data.get("objs", []):
         bdb3d = item.get("bdb3d") or {}
@@ -24,8 +38,8 @@ def convert_data_pkl(data) -> dict:
         entry = {
             "label": item.get("classname", "object"),
             "score": float(item.get("score", 1.0)),
-            "centroid": centroid,
-            "basis": basis,
+            "centroid": [float(value) - offset for value, offset in zip(centroid, origin)],
+            "basis": axes_as_rows(basis),
             "coeffs": [float(value) / 2.0 for value in size],
         }
         shape = item.get("mesh_path") or item.get("mesh")
@@ -35,8 +49,16 @@ def convert_data_pkl(data) -> dict:
     layout = data.get("layout")
     layout_corners = None
     if isinstance(layout, dict) and layout.get("manhattan_world") is not None:
-        layout_corners = layout["manhattan_world"]
+        layout_corners = [[float(value) - offset for value, offset in zip(point, origin)]
+                          for point in layout["manhattan_world"]]
     return rc.scene_from_oriented_objects(objects, layout_corners=layout_corners)
+
+
+def dpc_scene_name(sample_id: str) -> str:
+    parts = sample_id.split("/")
+    if len(parts) == 3:
+        return "%s-%s__%s" % tuple(parts)
+    return sample_id
 
 
 def load_data_pkl(path: str):
@@ -83,9 +105,10 @@ def find_data_pkl(
 ) -> "str | None":
     matches = index_predictions(search_root)
     if sample_id:
-        for path in matches:
-            if prediction_sample_id(path) == sample_id:
-                return path
+        for wanted in dict.fromkeys((sample_id, dpc_scene_name(sample_id))):
+            for path in matches:
+                if prediction_sample_id(path) == wanted:
+                    return path
         for path in matches:
             if sample_id in path:
                 return path

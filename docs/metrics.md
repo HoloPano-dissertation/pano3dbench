@@ -1,9 +1,9 @@
-# Metrics and extending the toolbox
+# Показатели
 
-Every metric is computed by **the same core code** from a single representation,
-`SceneOutput = <layout, objects, relations>` (see [architecture.md](architecture.md)),
-so numbers across methods are comparable. A metric is enabled in the config via the
-`metrics:` list (see [usage.md](usage.md)); each takes its own `parameters` block.
+Все показатели считает **один и тот же код ядра** по одному представлению
+`SceneOutput = <макет, предметы, отношения>` (см. [architecture.md](architecture.md)),
+поэтому числа разных методов сравнимы. Показатель включается в конфигурации списком
+`metrics:`, у каждого свой блок `parameters`.
 
 ```yaml
 metrics:
@@ -13,127 +13,158 @@ metrics:
     parameters: { iou_threshold: 0.15, num_points: 2048, normalize: canonical }
 ```
 
-## What each metric reports
+Обозначения: **↑** — чем больше, тем лучше, **↓** — чем меньше, тем лучше. «Эталон» —
+нужна ли эталонная разметка (`requires_ground_truth`); показатели без эталона измеряют
+согласованность самого предсказания. «Уровень» — по сцене (усредняется по сценам) или по
+набору (считается один раз по всем сценам). Код: `src/pano3dbench/metrics/`; как именно
+считается каждый показатель, по шагам и с именами функций, — в
+[src/pano3dbench/metrics/README.md](../src/pano3dbench/metrics/README.md).
 
-Notation: **↑** higher is better, **↓** lower is better. "GT" — whether ground truth is
-required (`requires_ground_truth`); metrics without GT measure self-consistency of the
-prediction. "Level" — per-scene (averaged over scenes) or dataset (computed once over
-the whole set). Implementation: `src/benchmark_toolbox/metrics/`.
-
-### Object detection (3D)
-
-| `type` | What it measures | Dir. | GT | Level | Parameters (default) |
-|---|---|:--:|:--:|---|---|
-| `object_map` | per-scene mAP over objects at **oriented 3D-IoU**; AP per class within a scene, averaged over scenes | ↑ | yes | scene | `iou_threshold` (0.5), `classes`, `class_map`, `name` |
-| `object_map_dataset` | dataset-level mAP: the per-class PR curve is built over **all** scenes (COCO/VOC style) — the headline detection number | ↑ | yes | dataset | `iou_threshold` (0.5), `classes`, `class_map`, `name` |
-
-Matching predictions to ground truth is greedy by descending `score`, each label is
-matched once; a hit requires IoU ≥ `iou_threshold`. **IoU is oriented**: `OrientedBox3D`
-computes the intersection of rotated rectangles on the floor plane (Sutherland–Hodgman)
-× the vertical overlap. The paper protocol uses a threshold of **0.15** (not 0.5, which
-would be incomparable with the publications for these methods).
-
-#### The class set of a protocol (`classes`, `class_map`, `name`)
-
-By default mAP is averaged over **every** label present in the ground truth. The
-publications average over a **fixed category list** — 11 categories for the DPC /
-PanoContext-Former iGibson protocol (`chair, sofa, table, fridge, sink, door, floor_lamp,
-bottom_cabinet, top_cabinet, sofa_chair, dryer`) — so the two numbers answer different
-questions and must not share a table.
-
-| Parameter | Meaning |
+| Модуль | Что в нём |
 |---|---|
-| `classes` | whitelist of evaluation classes; everything else is dropped |
-| `class_map` | rename raw label → evaluation class (several source labels may collapse into one, e.g. `office_chair, stool → chair`); labels absent from the map are dropped |
-| `name` | row name in the summary (default: the metric type) |
+| `detection.py` | mAP и протокол классов |
+| `layout.py` | IoU макета |
+| `physics.py` | столкновения, нарушения макета, проникание |
+| `shape.py` | Чамфер и F-мера формы |
 
-Filtering removes objects from **both** sides before matching, so an out-of-protocol
-detection is not counted as a false positive. Under a class protocol a scene holding no
-in-protocol ground truth returns NaN (**excluded** from the average) instead of a 0 that
-would deflate the mean; without a protocol the historical 0.0 is kept.
+## Детектирование предметов
 
-`name` exists because summary rows are keyed by the metric name: giving each entry its own
-name is what lets a single run report **per-class AP** next to the headline mAP (the
-evaluator rejects duplicate names instead of silently overwriting a row).
+| `type` | Что измеряет | | Эталон | Уровень | Параметры (по умолчанию) |
+|---|---|:--:|:--:|---|---|
+| `object_map` | mAP по предметам при **ориентированном 3D-IoU**: AP по классам внутри сцены, среднее по сценам | ↑ | да | сцена | `iou_threshold` (0.5), `classes`, `class_map`, `name` |
+| `object_map_dataset` | mAP по набору: кривая точность-полнота каждого класса строится по **всем** сценам, как в COCO/VOC; главный показатель детектирования | ↑ | да | набор | `iou_threshold` (0.5), `classes`, `class_map`, `name` |
 
-Writing those rows out by hand means a dozen near-identical blocks, and a category that
-drifts between two configs quietly makes their numbers incomparable — so `per_class: true`
-expands ONE entry into a `<name>_<class>` row per class, over the very list the headline
-mAP uses. The ready protocol covering all 11 categories is
-`configs/protocols/igibson_pcf.yaml`.
+Сопоставление жадное, по убыванию `score`, каждый эталонный предмет сопоставляется один
+раз; попадание — при IoU ≥ `iou_threshold`. **IoU ориентированный**: `OrientedBox3D`
+пересекает повёрнутые прямоугольники на плоскости пола (алгоритм Сазерленда — Ходжмана)
+и умножает на перекрытие по высоте. Протокол статьи — порог **0.15**: при 0.5 числа были
+бы несравнимы с публикациями этих методов.
+
+### Набор классов протокола (`classes`, `class_map`, `name`)
+
+По умолчанию mAP усредняется по **всем** классам эталона. Публикации усредняют по
+**фиксированному списку** — 11 классов в протоколе DPC и PanoContext-Former на iGibson
+(`chair, sofa, table, fridge, sink, door, floor_lamp, bottom_cabinet, top_cabinet,
+sofa_chair, dryer`). Это два разных числа, и в одной таблице им не место.
+
+| Параметр | Смысл |
+|---|---|
+| `classes` | список классов оценки; остальные отбрасываются |
+| `class_map` | переименование исходного класса в класс оценки (несколько исходных могут слиться в один, например `office_chair, stool → chair`); классы вне таблицы отбрасываются |
+| `name` | имя строки в сводке (по умолчанию — тип показателя) |
+
+Фильтр убирает предметы с **обеих** сторон до сопоставления, поэтому предсказание вне
+протокола не считается ложным. При протоколе классов сцена без эталонных предметов
+протокола возвращает NaN и **не входит** в среднее, вместо нуля, который занизил бы
+среднее. Без протокола сохраняется прежнее поведение — 0.0.
+
+Строки сводки различаются по имени показателя, поэтому `name` позволяет в одном запуске
+вывести **AP по классам** рядом с общим mAP; повторяющиеся имена оценщик отвергает.
+`per_class: true` разворачивает ОДНУ запись в строки `<name>_<класс>` по тому же списку,
+что и общий mAP. Готовый протокол на 11 классов — `configs/igibson/protocols/igibson_pcf.yaml`.
 
 ```yaml
 metrics:
-  - type: object_map_dataset          # headline: mAP over the protocol
+  - type: object_map_dataset
     parameters: &pcf
       iou_threshold: 0.15
       classes: [chair, sofa, table, fridge, sink, door, floor_lamp,
                 bottom_cabinet, top_cabinet, sofa_chair, dryer]
-  - type: object_map_dataset          # -> ap_chair, ap_sofa, ... (one row per class)
+  - type: object_map_dataset
     parameters:
       <<: *pcf
       per_class: true
       name: ap
 ```
 
-### Layout
+## Макет
 
-| `type` | What it measures | Dir. | GT | Level | Parameters |
+| `type` | Что измеряет | | Эталон | Уровень |
+|---|---|:--:|:--:|---|
+| `layout_iou_3d` | 3D-IoU предсказанного и эталонного макета комнаты | ↑ | да | сцена |
+
+У всех методов макет даёт общий HorizonNet, поэтому это **общий контроль**, а не
+различающий методы показатель.
+
+## Физическая правдоподобность (без эталона)
+
+| `type` | Что измеряет | | Эталон | Уровень | Параметры |
 |---|---|:--:|:--:|---|---|
-| `layout_iou_3d` | 3D-IoU of predicted vs. ground-truth room layout | ↑ | yes | scene | — |
+| `collision_rate` | доля пересекающихся **пар предметов** | ↓ | нет | сцена | `minimum_intersection` (0.0) |
+| `layout_violation_rate` | доля предметов, выходящих за макет (пол, стены, потолок) сверх допуска | ↓ | нет | сцена | `tolerance` (0.0) — доля объёма |
+| `layout_penetration` | средняя доля объёма предмета **вне** комнаты | ↓ | нет | сцена | — |
 
-For all methods the layout comes from a shared HorizonNet → it is a **shared control**,
-not a method-discriminating metric (reported for completeness, see [results.md](results.md)).
+`tolerance` в `layout_violation_rate` не учитывает миллиметровые касания стен (мебель
+вплотную); в протоколе статьи — 0.05. `layout_penetration` честнее бинарной доли.
 
-### Physical plausibility (no ground truth)
+## Форма объектов
 
-| `type` | What it measures | Dir. | GT | Level | Parameters |
+| `type` | Что измеряет | | Эталон | Уровень | Параметры (по умолчанию) |
 |---|---|:--:|:--:|---|---|
-| `collision_rate` | fraction of overlapping **object pairs** (object↔object) | ↓ | no | scene | `minimum_intersection` (0.0) |
-| `layout_violation_rate` | fraction of objects sticking out of the layout (floor/walls/ceiling) beyond a tolerance | ↓ | no | scene | `tolerance` (0.0) — volume fraction |
-| `layout_penetration` | mean fraction of object volume **outside** the room (continuous depth) | ↓ | no | scene | — |
+| `mesh_chamfer` | симметричное расстояние Чамфера: сетка предмета ↔ эталонная сетка | ↓ | да | сцена | `iou_threshold` (0.15), `num_points` (2048), `seed` (0), `squared` (True), `normalize` (none), `mesh_root` (—) |
+| `mesh_fscore` | F-мера поверхности при пороге `fscore_threshold` | ↑ | да | сцена | + `fscore_threshold` (0.1) |
 
-`tolerance` in `layout_violation_rate` ignores millimetre wall contacts (furniture
-standing flush); the paper protocol uses 0.05. `layout_penetration` is fairer than the
-binary rate for reporting.
+Без оптимизации отношений Im3D-Pano (LDIF) и Total3D-Pano (MGN) дают **одинаковые рамки**:
+ствол общий, а голова формы рамку не трогает. Поэтому ни один показатель рамок их не
+различает, и для сравнения нужна форма.
 
-### Shape quality (mesh)
+Как считается:
 
-| `type` | What it measures | Dir. | GT | Level | Parameters (default) |
-|---|---|:--:|:--:|---|---|
-| `mesh_chamfer` | symmetric Chamfer distance: predicted object mesh ↔ GT mesh | ↓ | yes | scene | `iou_threshold` (0.15), `num_points` (2048), `seed` (0), `squared` (True), `normalize` (none), `mesh_root` (—) |
-| `mesh_fscore` | surface F-score over matched objects at threshold `fscore_threshold` | ↑ | yes | scene | + `fscore_threshold` (0.1) |
+1. **Сопоставление** — жадно по ориентированному 3D-IoU, порог 0.15, тем же
+   `greedy_match`, что и в `object_map`, но **без учёта класса**: по всем предметам сцены сразу. Форма считается **только по сопоставленным парам**:
+   ошибки детектирования ловит `object_map`.
+2. **Точки.** Для каждого предмета пары берётся облако точек его формы (см. «Где форма
+   у предмета»).
+3. **Чамфер и F-мера:** `chamfer = mean_i d(pred_i→gt) + mean_j d(gt_j→pred)` (по
+   умолчанию квадрат расстояния, `squared=True`); F-мера — доля точек ближе
+   `fscore_threshold`. Оба за один проход поиска ближайших соседей.
+4. **Агрегация.** По сцене — среднее по её парам. Если пар с формой нет, показатель
+   возвращает NaN, и сцена **не входит** в среднее: Чамфер 0 означал бы «идеально».
 
-Objects are matched by 3D-IoU (as in `object_map`); for each pair the meshes are
-surface-sampled and compared. `normalize: canonical` normalizes **each** mesh
-independently (bbox centre + unit diagonal) — a fair comparison of heads with different
-canonical-frame conventions (needed for LDIF-vs-MGN, see [shape_metric.md](shape_metric.md)).
-Shape is passed to an object via `attributes["shape"]` (a path to `.ply`/`.obj`/`.f32`
-or inline points). Scenes with no matched pairs → the metric returns NaN and is
-**excluded** from aggregation (a detection failure is not reported as a perfect shape).
+Реализация — чистая стандартная библиотека (собственное k-d дерево, выборка точек
+пропорционально площадям треугольников).
 
-## Aggregation and artifacts
+**Система координат сравнения.** Чамфер считается как есть, поэтому предсказанная и
+эталонная сетка одного предмета должны лежать в **одной канонической системе предмета**.
+`normalize: unit` центрирует обе формы по центру эталона и делит на диагональ его рамки.
+Для сравнения LDIF и MGN нужен `normalize: canonical`: MGN выдаёт сетки в метрах, LDIF —
+в единичном масштабе, и `canonical` нормирует каждую сетку отдельно (центр рамки и
+единичная диагональ), отделяя форму от масштаба, который уже задан рамкой.
+Совпадение систем стоит проверить на 2–3 предметах до полного прогона.
 
-- **per-scene** metrics: `mean`, `median`, **95% bootstrap CI** over scenes;
-- **dataset** metrics (`object_map_dataset`): computed once over all scenes;
-- NaN values (metric not applicable to a scene) are excluded from aggregation.
+**Где форма у предмета.** Предмет ссылается на форму полем `attributes["shape"]`:
 
-Each run writes to `artifacts/<name>/`: `summary.json` (aggregates), `report.md`
-(table), `metrics.jsonl` (per scene), `run.json` (config, seed, git revision).
+- путь к файлу: `.ply` / `.obj` (поверхность выбирается на лету), `.f32` / `.bin` (сырые
+  float32 little-endian, xyz подряд), `.json` (список точек);
+- список `[[x,y,z], ...]` прямо в JSON;
+- словарь `{"points": [...]}`, `{"file": "..."}` или `{"mesh": "..."}`.
 
-## Adding your own metric
+Относительные пути разрешаются от `mesh_root`. Если формы нет хотя бы у одной стороны,
+пара пропускается. `dpc_runner.convert_data_pkl` переносит `item["mesh_path"]` /
+`item["mesh"]` (если это строка) в `attributes["shape"]`.
 
-1. Subclass `BaseMetric` (`src/benchmark_toolbox/metrics/base.py`) and implement
-   `compute(prediction, ground_truth) -> float`. For a dataset-level metric, set
-   `dataset_level = True` and implement `compute_dataset(predictions, ground_truths)`.
-   If ground truth is not needed, set `requires_ground_truth = False` (the metric is then
-   also computed on scenes without GT).
-2. Register it with the decorator `@BaseMetric.registry.register("my_metric")`.
-3. Import it in `metrics/__init__.py` (so the registration runs) — done: the metric is
-   available in a config as `type: my_metric`.
+## Агрегация и результаты запуска
+
+- показатели **по сцене**: среднее, медиана и **95 % доверительный интервал** бутстрэпом
+  по сценам;
+- показатели **по набору** (`object_map_dataset`) считаются один раз по всем сценам;
+- NaN (показатель не применим к сцене) в агрегацию не входит.
+
+Каждый запуск пишет в `artifacts/<имя>/`: `summary.json` (сводка), `report.md` (таблица),
+`metrics.jsonl` (по сценам), `run.json` (конфигурация, зерно, ревизия git).
+
+## Свой показатель
+
+1. Наследовать `BaseMetric` (`src/pano3dbench/metrics/base.py`) и реализовать
+   `compute(prediction, ground_truth) -> float`. Для показателя по набору —
+   `dataset_level = True` и `compute_dataset(predictions, ground_truths)`. Если эталон не
+   нужен — `requires_ground_truth = False`.
+2. Зарегистрировать декоратором `@BaseMetric.registry.register("my_metric")`.
+3. Импортировать модуль в `metrics/__init__.py`, чтобы регистрация выполнилась. После
+   этого показатель доступен в конфигурации как `type: my_metric`.
 
 ```python
-from benchmark_toolbox.metrics.base import BaseMetric
+from pano3dbench.metrics.base import BaseMetric
 
 @BaseMetric.registry.register("bbox_count_ratio")
 class BBoxCountRatio(BaseMetric):
@@ -146,24 +177,5 @@ class BBoxCountRatio(BaseMetric):
         return len(prediction.objects) / gt
 ```
 
-Return `float("nan")` if the metric is not applicable to a particular scene — it is then
-excluded from the average (rather than counted as zero).
-
-## Adding your own model
-
-The core does **not** import the model — it runs in its own environment and exchanges
-JSON files. Two paths:
-
-- **fixture** (ready-made predictions): convert the model output to `SceneOutput` JSON
-  and place it in a directory; config `model.type: fixture`, `prediction_dir: <dir>`.
-  Convenient for debugging metrics and for re-scoring.
-- **subprocess** (live inference): write a runner per the contract
-  ([`runners/README.md`](../runners/README.md)) (it reads `request`, writes `SceneOutput`
-  via the `runners/_common.py` helpers), and describe the environment in
-  `configs/environments/<env>.yaml`. An end-to-end example is `echo` (a GPU-free demo):
-  `runners/echo_runner.py` + `configs/environments/echo.yaml`. All three paper methods
-  share one converter, `runners/dpc_runner.py` (common `data.pkl` format).
-
-Extension points are registered in registries (`registry.py`): `BaseSceneEstimator`,
-`BaseDatasetLoader`, `BaseMetric`, `BaseEnvironmentManager` — a new component is plugged
-in **without changing the core**. Details: [architecture.md](architecture.md).
+Если показатель к сцене не применим, нужно вернуть `float("nan")`: сцена не войдёт
+в среднее, а не будет посчитана нулём.

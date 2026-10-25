@@ -1,13 +1,11 @@
-"""Shared fixtures for the benchmark_toolbox test suite."""
-
 import sys
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-from benchmark_toolbox.domain import SceneSample
-from benchmark_toolbox.environments import EnvironmentSpec, load_environment_spec
+from pano3dbench.domain import SceneSample
+from pano3dbench.environments import EnvironmentSpec, load_environment_spec
 
 
 @pytest.fixture(scope="session")
@@ -32,7 +30,6 @@ def fake_command(fake_runner: Path) -> list[str]:
 
 @pytest.fixture
 def load_env(repo_root: Path) -> Callable[[str], EnvironmentSpec]:
-    """Load a shipped environment spec by short name (``"dpc"``, ``"echo"``...)."""
 
     def _load(name: str) -> EnvironmentSpec:
         return load_environment_spec(

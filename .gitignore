@@ -1,22 +1,12 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 .venv/
 .venv*/
-
-# Devtools
 .idea/
 .DS_Store
-.coverage
-htmlcov/
-uv.lock
-.python-version
 
-# Project
 artifacts/
-data/raw/
-data/cache/
 checkpoints/
-.benchmark_toolbox/
+.pano3dbench/
