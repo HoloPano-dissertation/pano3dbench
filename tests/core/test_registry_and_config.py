@@ -174,6 +174,93 @@ def test_cyclic_extends_is_reported(tmp_path: Path) -> None:
         ExperimentConfig.fromfile(a)
 
 
+def _minimal(tmp_path: Path, **overrides: object) -> dict:
+    payload: dict = {
+        "model": {"type": "fixture", "parameters": {"prediction_dir": "pred"}},
+        "dataset": {"type": "manifest", "parameters": {"manifest": "m.jsonl"}},
+        "metrics": [{"type": "layout_iou_3d"}],
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_home_in_a_parameter_path_is_expanded(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    payload = _minimal(tmp_path)
+    payload["dataset"]["parameters"]["manifest"] = "~/data/m.jsonl"
+    config = ExperimentConfig.fromfile(write_json(tmp_path / "c.json", payload))
+    assert config.dataset.parameters["manifest"] == str(tmp_path / "home" / "data" / "m.jsonl")
+
+
+def test_home_in_extends_is_expanded(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    write_json(home / "base.json", _minimal(tmp_path))
+    config = ExperimentConfig.fromfile(write_json(tmp_path / "c.json", {"extends": "~/base.json"}))
+    assert config.metrics[0].type == "layout_iou_3d"
+
+
+def test_absolute_paths_are_kept_as_written(tmp_path: Path) -> None:
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(real)
+    payload = _minimal(tmp_path, output_dir=str(link / "out"))
+    payload["model"]["parameters"]["prediction_dir"] = str(link / "pred")
+    config = ExperimentConfig.fromfile(write_json(tmp_path / "c.json", payload))
+    assert config.model.parameters["prediction_dir"] == str(link / "pred")
+    assert config.output_dir == link / "out"
+
+
+@pytest.mark.parametrize("value", [None, 3, ["a", "b"], {"x": 1}])
+def test_non_string_path_values_are_left_alone(tmp_path: Path, value: object) -> None:
+    payload = _minimal(tmp_path)
+    payload["model"]["parameters"]["checkpoint"] = value
+    config = ExperimentConfig.fromfile(write_json(tmp_path / "c.json", payload))
+    assert config.model.parameters["checkpoint"] == value
+
+
+def test_a_metric_without_parameters_does_not_stop_path_resolution(tmp_path: Path) -> None:
+    payload = _minimal(
+        tmp_path,
+        metrics=[
+            {"type": "layout_iou_3d"},
+            {"type": "mesh_chamfer", "parameters": {"reference_dir": "refs"}},
+        ],
+    )
+    config = ExperimentConfig.fromfile(write_json(tmp_path / "c.json", payload))
+    assert config.metrics[1].parameters["reference_dir"] == str(tmp_path / "refs")
+
+
+def test_per_class_false_keeps_a_single_metric(tmp_path: Path) -> None:
+    payload = _minimal(
+        tmp_path,
+        metrics=[{"type": "object_map", "parameters": {"per_class": False, "classes": ["bed", "chair"]}}],
+    )
+    config = ExperimentConfig.fromfile(write_json(tmp_path / "c.json", payload))
+    assert [m.parameters.get("name") for m in config.metrics] == [None]
+    assert config.metrics[0].parameters["classes"] == ["bed", "chair"]
+
+
+def test_cyclic_extends_lists_files_in_order(tmp_path: Path) -> None:
+    a = write_json(tmp_path / "a.json", {"extends": "b.json"})
+    write_json(tmp_path / "b.json", {"extends": "c.json"})
+    write_json(tmp_path / "c.json", {"extends": "a.json"})
+    with pytest.raises(ConfigError) as error:
+        ExperimentConfig.fromfile(a)
+    chain = str(error.value).split(": ", 1)[1].split(" -> ")
+    assert [Path(item).name for item in chain] == ["a.json", "b.json", "c.json", "a.json"]
+
+
+@pytest.mark.parametrize("text", ["- a\n- b\n", "just text\n"])
+def test_a_config_that_is_not_a_mapping_is_a_config_error(tmp_path: Path, text: str) -> None:
+    path = tmp_path / "c.yaml"
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ConfigError, match="mapping"):
+        ExperimentConfig.fromfile(path)
+
+
 def test_example_configs_exist() -> None:
     assert EXAMPLE_CONFIGS, f"no example configs in {CONFIGS_DIR}"
 

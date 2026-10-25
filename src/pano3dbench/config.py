@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import contextlib
-from collections.abc import Iterator, Mapping, MutableMapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from itertools import chain
 from pathlib import Path
@@ -25,7 +24,7 @@ class ComponentConfig:
             raise ConfigError(
                 f"Component configuration requires a 'type' field: {map!r}"
             ) from kerr
-        return cls(type, map.get("parameters", {}))
+        return cls(type, map.get("parameters") or {})
 
 
 @dataclass(frozen=True)
@@ -44,13 +43,9 @@ class ExperimentConfig:
 
         source_path = Path(path).expanduser().resolve()
         layered = load_map_chain(source_path)
-        if odir := layered.get("output_dir"):
-            output_dir = Path(odir).expanduser()
-            if not output_dir.is_absolute():
-                output_dir = source_path.parent.joinpath(output_dir)
-        else:
-            output_dir = source_path.parent.joinpath("artifacts")
-        output_dir = output_dir.resolve()
+        output_dir = Path(str(layered.get("output_dir") or "artifacts")).expanduser()
+        if not output_dir.is_absolute():
+            output_dir = source_path.parent.joinpath(output_dir).resolve()
         metrics_data = layered.get("metrics", [])
         if not metrics_data:
             raise ConfigError("At least one metric must be configured")
@@ -62,12 +57,10 @@ class ExperimentConfig:
             raise ConfigError(
                 f"There is no {missing_key} in presented config: {layered!r}"
             ) from None
-        # per_class is a blunt marker. it never appears in single class configs
-        # TODO(Daniel): Make another condition of multiclass metrics
         metrics = chain.from_iterable(
-            (ComponentConfig.fromdict(metric),)
-            if "per_class" not in metric.get("parameters", {})
-            else _expand_classes(metric)
+            _expand_classes(metric)
+            if (metric.get("parameters") or {}).get("per_class")
+            else (ComponentConfig.fromdict(metric),)
             for metric in metrics_data
         )
         return cls(
@@ -81,10 +74,9 @@ class ExperimentConfig:
         )
 
 
-def _expand_classes(metric: MutableMapping[str, Any]) -> Iterator[ComponentConfig]:
-    parameters = metric.get("parameters", {})
-    with contextlib.suppress(KeyError):
-        parameters.pop("per_class")
+def _expand_classes(metric: Mapping[str, Any]) -> Iterator[ComponentConfig]:
+    parameters = dict(metric["parameters"])
+    parameters.pop("per_class")
     classes = parameters.get("classes")
     if not classes:
         raise ConfigError(
@@ -92,8 +84,13 @@ def _expand_classes(metric: MutableMapping[str, Any]) -> Iterator[ComponentConfi
         )
     prefix = str(parameters.pop("name", "ap"))
     for class_name in classes:
-        metric["parameters"] = parameters | {
-            "classes": [class_name],
-            "name": f"{prefix}_{class_name}",
-        }
-        yield ComponentConfig.fromdict(metric)
+        yield ComponentConfig.fromdict(
+            {
+                **metric,
+                "parameters": {
+                    **parameters,
+                    "classes": [class_name],
+                    "name": f"{prefix}_{class_name}",
+                },
+            }
+        )

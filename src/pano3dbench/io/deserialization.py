@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import contextlib
 import json
 from collections import ChainMap, UserDict
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +11,6 @@ import yaml
 from pano3dbench.config import ConfigError
 
 
-# Does it really nead what parameter?
 def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     if path.suffix.lower() == ".json":
@@ -21,16 +20,18 @@ def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:
     else:
         msg = f"File {path} is not YAML or JSON"
         raise ValueError(msg)
-    try:
-        return dict(data)
-    except TypeError as terr:
+    if not isinstance(data, Mapping):
         msg = f"{what} must be a mapping: {path}"
-        raise ConfigError(msg) from terr
+        raise ConfigError(msg)
+    return dict(data)
+
+
+def _resolve_against(base: Path, value: str) -> Path:
+    candidate = Path(value).expanduser()
+    return candidate if candidate.is_absolute() else base.joinpath(candidate).resolve()
 
 
 class MapFile(UserDict[str, Any]):
-    """Load mapping file and resolve all paths with respect to current file position"""
-
     path_keys = (
         "manifest",
         "checkpoint",
@@ -40,66 +41,38 @@ class MapFile(UserDict[str, Any]):
 
     def __init__(self, path: str | Path) -> None:
         path = Path(path).expanduser().resolve()
-        map = read_mapping_file(path, what="Map file")
-        super().__init__(map)
+        super().__init__(read_mapping_file(path, what="Map file"))
         self.origin = path
-        with contextlib.suppress(KeyError):
-            self.data["model"]["parameters"] = {
-                k: self._resolve_path(k, v)
-                for k, v in self.data["model"]["parameters"].items()
-            }
-        with contextlib.suppress(KeyError):
-            self.data["dataset"]["parameters"] = {
-                k: self._resolve_path(k, v)
-                for k, v in self.data["dataset"]["parameters"].items()
-            }
-        with contextlib.suppress(KeyError):
-            for metric in self.data["metrics"]:
-                metric["parameters"] = {
-                    k: self._resolve_path(k, v) for k, v in metric["parameters"].items()
-                }
+        for section in ("model", "dataset"):
+            component = self.data.get(section)
+            if isinstance(component, dict) and isinstance(component.get("parameters"), dict):
+                component["parameters"] = self._resolve_parameters(component["parameters"])
+        for metric in self.data.get("metrics") or ():
+            if isinstance(metric, dict) and isinstance(metric.get("parameters"), dict):
+                metric["parameters"] = self._resolve_parameters(metric["parameters"])
 
     @classmethod
     def _is_path(cls, key: str) -> bool:
         return key in cls.path_keys or key.endswith(("_path", "_dir", "_root"))
 
-    def _resolve_path(self, key: str, value: Any, /) -> str:  # noqa: ANN401
-        if self._is_path(key):
-            candidate = self.origin.parent.joinpath(value).expanduser().resolve()
-            return str(candidate)
+    def _resolve_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
+        return {k: self._resolve_path(k, v) for k, v in parameters.items()}
+
+    def _resolve_path(self, key: str, value: Any, /) -> Any:  # noqa: ANN401
+        if self._is_path(key) and isinstance(value, str):
+            return str(_resolve_against(self.origin.parent, value))
         return value
 
 
 def load_map_chain(path: str | Path) -> ChainMap[str, Any]:
-    """Load map files that can extends each other
-
-    Args:
-        path: Path to root mapping file
-
-    Returns:
-        Map of all options.
-        Parameters that are closer to the root override distant ones
-
-    Raises:
-        ConfigError: If cycle import is detected
-            (message starts with "Cyclic 'extends'"")
-
-    """
-    root_file = MapFile(path)
-    maps = [root_file]
-    seen = {root_file.origin}
-    base = root_file.origin.parent
-    last_map = maps[-1]
-    while "extends" in last_map:
-        extension_path = base.joinpath(last_map.pop("extends")).expanduser().resolve()
-        if extension_path in seen:
-            chain = " -> ".join(str(item) for item in (*seen, extension_path))
-            raise ConfigError(
-                f"Cyclic 'extends' in the experiment configuration: {chain}"
-            )
-        seen.add(extension_path)
-        extension = MapFile(extension_path)
-        maps.append(extension)
+    maps = [MapFile(path)]
+    seen = [maps[0].origin]
+    while "extends" in maps[-1]:
         last_map = maps[-1]
-        base = last_map.origin.parent
+        extension = _resolve_against(last_map.origin.parent, str(last_map.pop("extends"))).resolve()
+        if extension in seen:
+            chain = " -> ".join(str(item) for item in (*seen, extension))
+            raise ConfigError(f"Cyclic 'extends' in the experiment configuration: {chain}")
+        seen.append(extension)
+        maps.append(MapFile(extension))
     return ChainMap(*maps)
