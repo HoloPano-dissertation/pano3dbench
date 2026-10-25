@@ -274,6 +274,46 @@ def patch_eval_no_grad() -> None:
     print(f"[eval_nograd] patched: {p}")
 
 
+def patch_rel_eval_needs_gt() -> None:
+    p = "models/pano3d/testing.py"
+    if not os.path.exists(p):
+        return
+    s = open(p).read()
+    if "DPC_PATCH_REL_EVAL_NEEDS_GT" in s:
+        print(f"[rel_eval] already patched: {p}")
+        return
+    old = "        if do_evaluation and 'relation' in gt_data:\n"
+    if old not in s:
+        print(f"[rel_eval] anchor not found in {p} — skip")
+        return
+    new = (
+        "        # DPC_PATCH_REL_EVAL_NEEDS_GT: relation metrics need detections matched to GT\n"
+        "        est_has_gt = bool(est_data.get('objs')) and 'gt' in est_data['objs']\n"
+        "        if do_evaluation and 'relation' in gt_data and est_has_gt:\n"
+    )
+    open(p, "w").write(s.replace(old, new, 1))
+    print(f"[rel_eval] patched: {p}")
+
+
+def patch_file_system_sharing() -> None:
+    p = "main.py"
+    s = open(p).read()
+    if "DPC_PATCH_FS_SHARING" in s:
+        print(f"[fs_sharing] already patched: {p}")
+        return
+    old = "import argparse\n"
+    if old not in s:
+        print(f"[fs_sharing] anchor not found in {p} — skip")
+        return
+    new = (
+        "import argparse\n"
+        "import torch.multiprocessing as _mp  # DPC_PATCH_FS_SHARING\n"
+        "_mp.set_sharing_strategy('file_system')\n"
+    )
+    open(p, "w").write(s.replace(old, new, 1))
+    print(f"[fs_sharing] patched: {p}")
+
+
 def main() -> int:
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
     repo = os.path.abspath(repo)
@@ -290,6 +330,8 @@ def main() -> int:
     patch_eval_metrics_degenerate()
     patch_num_workers()
     patch_eval_no_grad()
+    patch_rel_eval_needs_gt()
+    patch_file_system_sharing()
     print("\nDone. DPC inference/evaluation can be run now.")
     return 0
 
