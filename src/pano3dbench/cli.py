@@ -4,7 +4,7 @@ import argparse
 import logging
 from collections.abc import Sequence
 
-from pano3dbench.config import load_experiment_config
+from pano3dbench.config import ExperimentConfig
 from pano3dbench.datasets import BaseDatasetLoader
 from pano3dbench.evaluator import Evaluator
 from pano3dbench.metrics import BaseMetric
@@ -72,11 +72,11 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _environment_source(args: argparse.Namespace) -> "str | dict":
+def _environment_source(args: argparse.Namespace) -> str | dict:
     if args.env:
         return args.env
     if args.config:
-        config = load_experiment_config(args.config)
+        config = ExperimentConfig.fromfile(args.config)
         environment = config.model.parameters.get("environment")
         if environment is None:
             raise SystemExit(
@@ -87,7 +87,7 @@ def _environment_source(args: argparse.Namespace) -> "str | dict":
 
 
 def _run(config_path: str) -> int:
-    config = load_experiment_config(config_path)
+    config = ExperimentConfig.fromfile(config_path)
     model_parameters = dict(config.model.parameters)
     model_parameters.setdefault("seed", config.seed)
     estimator = BaseSceneEstimator.create(config.model.type, model_parameters)
@@ -99,9 +99,7 @@ def _run(config_path: str) -> int:
         for metric in config.metrics
     ]
     result = Evaluator(config, estimator, dataset, metrics).run()
-    print(
-        f"Evaluated {result.scene_count} scene(s). Artifacts: {result.output_dir}"
-    )
+    print(f"Evaluated {result.scene_count} scene(s). Artifacts: {result.output_dir}")
     return 0
 
 

@@ -8,7 +8,7 @@ import _common as rc
 import pytest
 
 from pano3dbench import SceneSample
-from pano3dbench.config import ComponentConfig, ExperimentConfig, load_experiment_config
+from pano3dbench.config import ComponentConfig, ExperimentConfig
 from pano3dbench.datasets.base import BaseDatasetLoader
 from pano3dbench.domain import SceneOutput
 from pano3dbench.environments import EnvironmentSpec, load_environment_spec
@@ -177,7 +177,7 @@ def test_shipped_method_configs_select_distinct_prediction_roots(
 ) -> None:
     roots: dict[str, str] = {}
     for path in (repo_root / "configs/igibson/runs").glob("*.yaml"):
-        config = load_experiment_config(path)
+        config = ExperimentConfig.fromfile(path)
         arguments = list(config.model.parameters.get("runner_args", ()))
         if "--pred-root" in arguments:
             roots[path.name] = arguments[arguments.index("--pred-root") + 1]

@@ -4,8 +4,13 @@ __pycache__/
 .pytest_cache/
 .venv/
 .venv*/
+
 .idea/
 .DS_Store
+.coverage
+htmlcov/
+uv.lock
+.python-version
 
 artifacts/
 checkpoints/

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
-from pano3dbench.serialization import read_mapping_file
+from pano3dbench.io.deserialization import read_mapping_file
 
 DEFAULT_WORKSPACE = ".pano3dbench"
 
