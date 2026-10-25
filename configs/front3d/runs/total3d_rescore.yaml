@@ -1,0 +1,14 @@
+extends: ../../protocols/boxes.yaml
+
+experiment_name: total3d_front3d
+output_dir: ../../../artifacts/total3d_front3d
+
+model:
+  type: fixture
+  parameters:
+    prediction_dir: /PATH/TO/front3d/eval/pred_total3d
+
+dataset:
+  type: manifest
+  parameters:
+    manifest: /PATH/TO/front3d/eval/manifest_pred_total3d.jsonl

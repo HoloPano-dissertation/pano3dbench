@@ -1,0 +1,14 @@
+extends: ../../protocols/boxes.yaml
+
+experiment_name: dpc_s20_front3d
+output_dir: ../../../artifacts/dpc_s20_front3d
+
+model:
+  type: fixture
+  parameters:
+    prediction_dir: /PATH/TO/front3d/eval/pred_dpc_s20
+
+dataset:
+  type: manifest
+  parameters:
+    manifest: /PATH/TO/front3d/eval/manifest_pred_dpc_s20.jsonl

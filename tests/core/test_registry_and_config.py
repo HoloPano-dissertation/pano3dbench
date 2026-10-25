@@ -12,7 +12,7 @@ from pano3dbench.registry import ComponentRegistry
 CONFIGS_DIR = Path(__file__).resolve().parents[2] / "configs"
 EXAMPLE_CONFIGS = sorted(
     path
-    for folder in (CONFIGS_DIR / "demo", CONFIGS_DIR / "igibson" / "runs")
+    for folder in (CONFIGS_DIR / "demo", CONFIGS_DIR / "igibson" / "runs", CONFIGS_DIR / "front3d" / "runs")
     if folder.is_dir()
     for path in folder.iterdir()
     if path.is_file()

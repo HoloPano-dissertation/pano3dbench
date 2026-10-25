@@ -8,7 +8,7 @@ device:
   gpu_ids: '0'
   num_workers: 8
 data:
-  split: /PATH/TO/front3d/dpc_scenes
+  split: /PATH/TO/front3d/dpc_stage1
   expand_dis: 0.1
   g_feature_length: 64
   fov_split: 0

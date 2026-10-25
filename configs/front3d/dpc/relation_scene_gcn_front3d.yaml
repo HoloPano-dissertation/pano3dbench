@@ -11,7 +11,7 @@ device:
   gpu_ids: '0'
   num_workers: 0
 data:
-  split: /PATH/TO/front3d/dpc_scenes
+  split: /PATH/TO/front3d/dpc_stage1
   expand_dis: 0.1
   igibson_obj_dataset: /PATH/TO/front3d/objects
   g_feature_length: 64

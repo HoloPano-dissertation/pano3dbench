@@ -1,0 +1,28 @@
+experiment_name: shape_im3d_front3d
+seed: 42
+output_dir: ../../../artifacts/shape_im3d_front3d
+
+model:
+  type: fixture
+  parameters:
+    prediction_dir: /PATH/TO/front3d/eval/shape500/pred_im3d
+
+dataset:
+  type: manifest
+  parameters:
+    manifest: /PATH/TO/front3d/eval/shape500/manifest_gt.jsonl
+
+metrics:
+  - type: mesh_chamfer
+    parameters:
+      iou_threshold: 0.15
+      num_points: 2048
+      seed: 0
+      normalize: canonical
+  - type: mesh_fscore
+    parameters:
+      iou_threshold: 0.15
+      num_points: 2048
+      seed: 0
+      fscore_threshold: 0.1
+      normalize: canonical

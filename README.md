@@ -102,12 +102,13 @@ pano3dbench/
 │   │   └── dpc/             конфигурации самого DPC для iGibson
 │   └── front3d/
 │       ├── front3d_to_igibson.json  соответствие классов 3D-FRONT словарю iGibson
-│       └── dpc/             конфигурации обучения компонент DPC на 3D-FRONT
+│       ├── dpc/             конфигурации DPC на 3D-FRONT: обучение компонент и вывод
+│       └── runs/            строки статьи по готовым предсказаниям
 ├── docs/                    документация
 ├── runners/                 раннеры моделей для изолированных окружений
 ├── scripts/
 │   ├── dpc/                 перевод предсказаний DPC, правки кода DPC
-│   ├── front3d/             форматы методов и проверка набора 3D-FRONT
+│   ├── front3d/             форматы методов, списки видов для оценки и проверка набора 3D-FRONT
 │   └── igibson/             эталон и цели MGN для iGibson
 ├── src/pano3dbench/         ядро
 ├── tests/                   тесты: core, runners, environments, front3d

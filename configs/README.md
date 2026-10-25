@@ -99,12 +99,32 @@ DeepPanoContext, своей конфигурации у них нет.
 | Файл                                  | За что отвечает                                                                                       |
 |---------------------------------------|-------------------------------------------------------------------------------------------------------|
 | `front3d_to_igibson.json`             | соответствие классов 3D-FRONT словарю iGibson для сравнения двух наборов; используется только в тесте |
-| `dpc/README.md`                       | порядок шести обучений на 3D-FRONT и переменная `PANO3D_CLASSES`                                      |
-| `dpc/bdb3d_estimation_front3d.yaml`   | обучение BEN (трёхмерные рамки) с нуля на сценах `dpc_scenes/`                                        |
+| `shape500_views.txt`                  | 500 тестовых видов, на которых считается форма (`scripts/front3d/eval/make_shape500.py`)              |
+| `dpc/README.md`                       | порядок обучений и вывода на 3D-FRONT и переменная `PANO3D_CLASSES`                                   |
+| `dpc/first_stage_front3d.yaml`        | первая стадия: вывод детектора и HorizonNet по обучающей и проверочной частям в `dpc_stage1/`         |
+| `dpc/bdb3d_estimation_front3d.yaml`   | обучение BEN (трёхмерные рамки) с нуля на детекциях `dpc_stage1/`                                     |
 | `dpc/ldif_front3d.yaml`               | обучение головы LDIF на предметах `objects/`                                                          |
 | `dpc/mgnet_front3d.yaml`              | обучение головы MGN на предметах `objects/`                                                           |
-| `dpc/relation_scene_gcn_front3d.yaml` | обучение Scene-GCN; нужны готовые веса BEN и LDIF                                                     |
+| `dpc/relation_scene_gcn_front3d.yaml` | обучение Scene-GCN на `dpc_stage1/`; нужны готовые веса BEN и LDIF                                    |
+| `dpc/pano3d_front3d.yaml`             | вывод DPC, 100 шагов оптимизации отношений                                                            |
+| `dpc/pano3d_front3d_s20.yaml`         | вывод DPC, 20 шагов                                                                                   |
+| `dpc/pano3d_front3d_im3d.yaml`        | вывод Im3D-Pano: без Scene-GCN, LDIF                                                                  |
+| `dpc/pano3d_front3d_total3d.yaml`     | вывод Total3D-Pano: без Scene-GCN, MGN                                                                |
+| `dpc/shape500_{im3d,total3d}.yaml`    | вывод на 500 видах формы с выгрузкой сеток                                                            |
 
 Детектор и HorizonNet обучаются скриптами `training/`, своих конфигураций здесь у них нет.
-Конфигурации вывода и оценки на 3D-FRONT пока есть только на кластере; их место —
-`front3d/runs/`.
+
+### `front3d/runs/` — строки статьи
+
+Все считают по готовым предсказаниям, переведённым `scripts/dpc/dpc_batch_convert.py`
+(`model.type: fixture`, без GPU).
+
+| Файл                         | Что считает                                                                    |
+|------------------------------|--------------------------------------------------------------------------------|
+| `dpc_rescore.yaml`           | DPC, 100 шагов; протокол `boxes.yaml`                                          |
+| `dpc_s20_rescore.yaml`       | DPC, 20 шагов                                                                  |
+| `im3d_rescore.yaml`          | Im3D-Pano                                                                      |
+| `total3d_rescore.yaml`       | Total3D-Pano                                                                   |
+| `gt_sanity.yaml`             | эталон вместо предсказаний: mAP и IoU макета 1.0, физика самого эталона        |
+| `shape_im3d_rescore.yaml`    | форма Im3D-Pano на 500 видах: Чамфер и F-мера, `normalize: canonical`          |
+| `shape_total3d_rescore.yaml` | форма Total3D-Pano на тех же видах                                             |
