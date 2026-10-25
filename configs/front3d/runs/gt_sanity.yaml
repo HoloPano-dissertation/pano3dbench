@@ -1,0 +1,14 @@
+extends: ../../protocols/boxes.yaml
+
+experiment_name: gt_front3d
+output_dir: ../../../artifacts/gt_front3d
+
+model:
+  type: fixture
+  parameters:
+    prediction_dir: /PATH/TO/front3d/ground_truth/test
+
+dataset:
+  type: manifest
+  parameters:
+    manifest: /PATH/TO/front3d/manifests_gt/test.jsonl

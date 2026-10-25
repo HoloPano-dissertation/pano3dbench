@@ -85,12 +85,13 @@ pano3dbench/
 │   │   └── dpc/             DPC's own configs for iGibson
 │   └── front3d/
 │       ├── front3d_to_igibson.json  mapping of 3D-FRONT classes to the iGibson vocabulary
-│       └── dpc/             training configs of the DPC components on 3D-FRONT
+│       ├── dpc/             DPC configs on 3D-FRONT: component training and inference
+│       └── runs/            paper rows from saved predictions
 ├── docs/                    documentation (Russian); configs/README.md and scripts/README.md list every config and script
 ├── runners/                 model runners for isolated environments
 ├── scripts/
 │   ├── dpc/                 DPC prediction conversion, DPC code patches
-│   ├── front3d/             method formats and checks of the 3D-FRONT set
+│   ├── front3d/             method formats, evaluation view lists and checks of the 3D-FRONT set
 │   └── igibson/             iGibson ground truth and MGN targets
 ├── src/pano3dbench/         the core
 ├── tests/                   tests: core, runners, environments, front3d

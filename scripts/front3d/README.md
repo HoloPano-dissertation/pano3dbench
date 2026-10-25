@@ -7,7 +7,8 @@ Total3D-Pano), и инструменты, которыми набор прове
 ```text
 scripts/front3d/
 ├── adapters/   разметка генератора → форматы HorizonNet, Pano3D/DPC, LDIF, MGN, вырезки предметов
-└── qa/         проверка камер, геометрии и изображений; отчёт HTML и контактные листы
+├── eval/       списки видов для первой стадии, вывода и формы
+└── qa/         проверка камер, геометрии, изображений и разметки; отчёт HTML и контактные листы
 ```
 
 Ниже `$EXP` — папка эксперимента генератора (после `front3d-pano export` и `validate`),
@@ -19,7 +20,8 @@ scripts/front3d/
 |---|---|
 | `export_crops.py`, `export_horizonnet.py`, `export_sdf.py`, `export_mgn_points.py`, `export_dpc.py`, `validate_dpc.py`, `qa/*` | установленный генератор (`pip install -e <клон front3d-pano>`) с его зависимостями; `export_sdf.py` ещё `scikit-image` |
 | `validate_horizonnet.py` | то же и корень `$DPC` в `PYTHONPATH` (читает цели загрузчиком HorizonNet) |
-| `export_dpc_scenes.py`, `complete_dpc_metadata.py`, `check_dpc_scenes.py` | окружение `Pano3D` и корень `$DPC` в `PYTHONPATH`: сцены пишутся и читаются кодом самого DPC |
+| `export_dpc_scenes.py`, `complete_dpc_metadata.py`, `check_dpc_scenes.py`, `eval/make_test_split.py`, `eval/index_stage1.py` | окружение `Pano3D` и корень `$DPC` в `PYTHONPATH`: сцены пишутся и читаются кодом самого DPC |
+| `eval/make_shape500.py` | только стандартная библиотека Python |
 
 ## `adapters/` — по порядку
 
@@ -125,6 +127,25 @@ python $TBX/scripts/front3d/qa/extract_preview.py $EXP/outputs/<часть>/<д�
 | `audit.py` (+ `quality.py`) | проверяет камеры, геометрию, яркость и долю валидной глубины, строит `review.html` с превью |
 | `review.py` | контактные листы: все отмеченные комнаты и фиксированная случайная выборка |
 | `extract_preview.py` | цвет, глубину, нормали и экземпляры одного HDF5 в PNG и формы массивов в `datasets.json` |
+| `check_annotations.py` | сверяет разметку комнаты с отрендеренной глубиной: границы потолка и пола HorizonNet, порядок углов, долю точек предмета внутри его рамки; рисует наложение по четырём видам и пишет `report.jsonl` |
+
+```bash
+python $TBX/scripts/front3d/qa/check_annotations.py $EXP <папка отчёта> <дом>/<комната> [...]
+```
+
+Рамка отмечается пурпурным, если внутри неё меньше 95 % точек предмета (с полем 3 см);
+столбцы, где граница потолка расходится с глубиной больше чем на 2 пикселя, — красными точками.
+
+## `eval/` — списки видов
+
+| Скрипт | Что пишет | Когда |
+|---|---|---|
+| `index_stage1.py EXP STAGE1` | `STAGE1/train.json`, `STAGE1/test.json` (проверочная часть) | после первой стадии, перед обучением BEN и Scene-GCN |
+| `make_test_split.py EXP` | `dpc_scenes/test_split.json`, `eval/manifest_test.jsonl` | перед выводом на тестовой части |
+| `make_shape500.py EXP` | `eval/shape500/`: список 500 видов, эталон с `mesh_watertight.ply`, перечни | перед подсчётом формы |
+
+Виды без видимых предметов во все списки не попадают: на них падает подсчёт отношений DPC.
+Порядок команд — [docs/front3d.md](../../docs/front3d.md).
 
 Флаг `missing_depth` ставится при доле валидной глубины ниже 95 %: окна и проёмы дают его
 и на нормальных комнатах, поэтому отмеченную комнату нужно посмотреть, а не исключать сразу.
