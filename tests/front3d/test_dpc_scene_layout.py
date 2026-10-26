@@ -11,18 +11,21 @@ np = pytest.importorskip("numpy")
 @pytest.fixture(scope="module")
 def naming():
     import sys, types
-    for name in ("utils", "utils.igibson_utils", "utils.relation_utils",
-                 "utils.render_utils", "h5py"):
-        sys.modules.setdefault(name, types.ModuleType(name))
-    sys.modules["utils.igibson_utils"].IGScene = type("IGScene", (), {})
-    sys.modules["utils.relation_utils"].RelationOptimization = type("R", (), {})
-    sys.modules["utils.render_utils"].seg2obj = lambda *a, **k: None
-    sys.modules["utils.render_utils"].is_obj_valid = lambda *a, **k: True
-    try:
-        module = importlib.import_module("export_dpc_scenes")
-    except Exception as error:
-        pytest.skip("the exporter is not importable here: %s" % error)
-    return module
+    with pytest.MonkeyPatch.context() as mp:
+        for name in ("utils", "utils.igibson_utils", "utils.relation_utils",
+                     "utils.render_utils", "h5py"):
+            if name not in sys.modules:
+                mp.setitem(sys.modules, name, types.ModuleType(name))
+        mp.setattr(sys.modules["utils.igibson_utils"], "IGScene", type("IGScene", (), {}), raising=False)
+        mp.setattr(sys.modules["utils.relation_utils"], "RelationOptimization", type("R", (), {}), raising=False)
+        mp.setattr(sys.modules["utils.render_utils"], "seg2obj", lambda *a, **k: None, raising=False)
+        mp.setattr(sys.modules["utils.render_utils"], "is_obj_valid", lambda *a, **k: True, raising=False)
+        try:
+            module = importlib.import_module("export_dpc_scenes")
+        except Exception as error:
+            pytest.skip("the exporter is not importable here: %s" % error)
+        yield module
+        sys.modules.pop("export_dpc_scenes", None)
 
 
 @pytest.fixture(scope="module")
