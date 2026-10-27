@@ -32,6 +32,8 @@ export PANO3D_CLASSES=$(python -c "import json,sys;print(','.join(json.load(open
 ```
 
 Все команды DPC ниже запускаются из `$DPC` в окружении `Pano3D` с `PYTHONPATH=$DPC`.
+На кластере те же шаги отправляются в очередь готовыми шаблонами
+`scripts/slurm/front3d.sh <шаг>` — [scripts/slurm/README.md](../scripts/slurm/README.md).
 
 ## 1. Обучение компонент
 

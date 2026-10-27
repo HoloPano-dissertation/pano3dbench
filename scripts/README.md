@@ -9,8 +9,12 @@
 scripts/
 ├── dpc/        работа с кодом и выводом DeepPanoContext, для любого набора
 ├── front3d/    форматы методов и проверка набора 3D-FRONT, см. front3d/README.md
-└── igibson/    подготовка данных набора iGibson
+├── igibson/    подготовка данных набора iGibson
+└── slurm/      шаблоны задач Slurm: обучение, вывод и подсчёт обоих наборов, см. slurm/README.md
 ```
+
+Шаблоны `slurm/` запускаются на узле входа кластера и отправляют задачи в очередь:
+подробно — в [slurm/README.md](slurm/README.md).
 
 Скрипты `front3d/` запускаются в окружении генератора `front3d-pano`, а не в `Pano3D`,
 кроме сцен DPC: подробно — в [front3d/README.md](front3d/README.md).

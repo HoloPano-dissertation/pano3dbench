@@ -88,6 +88,7 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 | [tests/README.md](tests/README.md)                                     | что проверяет каждая папка тестов                                         |
 | [configs/README.md](configs/README.md)                                 | за что отвечает каждая конфигурация                                       |
 | [scripts/README.md](scripts/README.md)                                 | за что отвечает каждый скрипт и с какими аргументами он запускается       |
+| [scripts/slurm/README.md](scripts/slurm/README.md)                     | шаблоны Slurm: обучение, вывод и подсчёт обоих наборов на кластере        |
 | [runners/README.md](runners/README.md)                                 | договор раннера модели                                                    |
 | [training/README.md](training/README.md)                               | обучение детектора и HorizonNet на 3D-FRONT                               |
 | [configs/front3d/dpc/README.md](configs/front3d/dpc/README.md)         | обучение BEN, LDIF, MGN и Scene-GCN на 3D-FRONT                           |

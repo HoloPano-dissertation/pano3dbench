@@ -125,6 +125,9 @@ conda run -n Pano3D python $TBX/scripts/dpc/dpc_batch_convert.py \
 
 ## Уровень 3: вывод и обучение с нуля
 
+На кластере те же шаги отправляются в очередь `scripts/slurm/igibson.sh heads|inference|score` —
+[scripts/slurm/README.md](../scripts/slurm/README.md).
+
 Вывод (по одному запуску на GPU для каждой конфигурации, каждый в свою папку):
 
 ```bash

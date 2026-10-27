@@ -10,6 +10,10 @@ dpc/
 ```
 
 Раскладка та же, что у iGibson ([../../igibson/dpc/README.md](../../igibson/dpc/README.md)).
+На кластере шаги отправляются в очередь `scripts/slurm/front3d.sh <шаг>`
+([scripts/slurm/README.md](../../../scripts/slurm/README.md)): `components` — шаги 1–2,
+`stage1` — шаг 3 с указателем, `heads` — шаги 4–6, `gcn` — шаг 7, затем `inference`,
+`score` и `shape`.
 
 ## Обучение
 

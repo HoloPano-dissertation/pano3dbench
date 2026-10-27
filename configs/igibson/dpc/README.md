@@ -11,6 +11,9 @@ dpc/
 ```
 
 Раскладка та же, что у 3D-FRONT ([../../front3d/dpc/README.md](../../front3d/dpc/README.md)).
+На кластере шаги отправляются в очередь `scripts/slurm/igibson.sh <шаг>`
+([scripts/slurm/README.md](../../../scripts/slurm/README.md)): `heads` — шаги 1–3,
+затем `inference` и `score`.
 Отличие одно: на iGibson детектор, HorizonNet, BEN и Scene-GCN не обучаются, берутся веса
 авторов из окружения `configs/environments/dpc.yaml`.
 
