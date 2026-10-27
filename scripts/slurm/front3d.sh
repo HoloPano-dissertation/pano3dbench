@@ -31,57 +31,84 @@ components)
     report "components: detector $detector, horizonnet $horizonnet, convert $convert"
     ;;
 stage1)
+    config=$(dpc_config training/first_stage_front3d.yaml)
     stage1=$(submit -J front3d-stage1 "${GPU[@]}" --time=1-00:00:00 "$SLURM_DIR/dpc_main.sbatch" \
-        "$(dpc_config training/first_stage_front3d.yaml)" test)
+        "$config" test)
     index=$(submit_after "$stage1" -J front3d-stage1-index "$SLURM_DIR/dpc_python.sbatch" \
         "$TBX/scripts/front3d/eval/index_stage1.py" "$EXP" "$EXP/dpc_stage1")
     report "stage1: inference $stage1, index $index"
     ;;
 heads)
-    ben=$(submit -J front3d-ben "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$(dpc_config training/bdb3d_estimation_front3d.yaml)" train)
-    ldif=$(submit -J front3d-ldif "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$(dpc_config training/ldif_front3d.yaml)" train)
-    mgn=$(submit -J front3d-mgn "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$(dpc_config training/mgnet_front3d.yaml)" train)
+    ben_config=$(dpc_config training/bdb3d_estimation_front3d.yaml)
+    ldif_config=$(dpc_config training/ldif_front3d.yaml)
+    mgn_config=$(dpc_config training/mgnet_front3d.yaml)
+    ben=$(submit -J front3d-ben "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$ben_config" train)
+    ldif=$(submit -J front3d-ldif "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$ldif_config" train)
+    mgn=$(submit -J front3d-mgn "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$mgn_config" train)
     report "heads: ben $ben, ldif $ldif, mgn $mgn"
     ;;
 gcn)
-    gcn=$(submit -J front3d-gcn "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$(dpc_config training/relation_scene_gcn_front3d.yaml)" train)
+    config=$(dpc_config training/relation_scene_gcn_front3d.yaml)
+    gcn=$(submit -J front3d-gcn "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$config" train)
     report "gcn: $gcn"
     ;;
 inference)
+    names=(pano3d_front3d pano3d_front3d_s20 pano3d_front3d_im3d pano3d_front3d_total3d)
+    configs=()
+    for name in "${names[@]}"; do
+        config=$(dpc_config "inference/$name.yaml")
+        configs+=("$config")
+    done
     split=$(submit -J front3d-test-split "$SLURM_DIR/dpc_python.sbatch" "$TBX/scripts/front3d/eval/make_test_split.py" "$EXP")
     jobs=()
-    for name in pano3d_front3d pano3d_front3d_s20 pano3d_front3d_im3d pano3d_front3d_total3d; do
+    for index in 0 1 2 3; do
         extra=()
-        case $name in
-        pano3d_front3d|pano3d_front3d_s20) extra=(--model.scene_gcn.relation_adjust True) ;;
-        esac
-        jobs+=("$(submit_after "$split" -J "front3d-$name" "${GPU[@]}" --time=12:00:00 "$SLURM_DIR/dpc_main.sbatch" \
-            "$(dpc_config "inference/$name.yaml")" qtest ${extra[@]+"${extra[@]}"})")
+        if [ "$index" -lt 2 ]; then
+            extra=(--model.scene_gcn.relation_adjust True)
+        fi
+        jobs+=("$(submit_after "$split" -J "front3d-${names[$index]}" "${GPU[@]}" --time=12:00:00 "$SLURM_DIR/dpc_main.sbatch" \
+            "${configs[$index]}" qtest ${extra[@]+"${extra[@]}"})")
     done
     report "inference: split $split, dpc ${jobs[0]}, dpc_s20 ${jobs[1]}, im3d ${jobs[2]}, total3d ${jobs[3]}"
     ;;
 score)
+    names=(dpc dpc_s20 im3d total3d)
+    roots=(pano3d_front3d pano3d_front3d_s20 pano3d_front3d_im3d pano3d_front3d_total3d)
+    configs=()
+    for name in "${names[@]}"; do
+        config=$(run_config "${name}_rescore.yaml")
+        configs+=("$config")
+    done
     jobs=()
-    for pair in dpc:pano3d_front3d dpc_s20:pano3d_front3d_s20 im3d:pano3d_front3d_im3d total3d:pano3d_front3d_total3d; do
-        name=${pair%%:*}
-        root=${pair#*:}
+    for index in 0 1 2 3; do
+        name=${names[$index]}
         convert=$(submit -J "front3d-convert-$name" "$SLURM_DIR/dpc_python.sbatch" "$TBX/scripts/dpc/dpc_batch_convert.py" \
-            "$EXP/eval/manifest_test.jsonl" "$EXP/eval/pred_$name" --repo "$DPC" --pred-root "out/$root")
-        jobs+=("$(submit_after "$convert" -J "front3d-score-$name" "$SLURM_DIR/bench_run.sbatch" "$(run_config "${name}_rescore.yaml")")")
+            "$EXP/eval/manifest_test.jsonl" "$EXP/eval/pred_$name" --repo "$DPC" --pred-root "out/${roots[$index]}")
+        jobs+=("$(submit_after "$convert" -J "front3d-score-$name" "$SLURM_DIR/bench_run.sbatch" "${configs[$index]}")")
     done
     report "score: dpc ${jobs[0]}, dpc_s20 ${jobs[1]}, im3d ${jobs[2]}, total3d ${jobs[3]}"
     ;;
 shape)
+    names=(im3d total3d)
+    inference=()
+    scoring=()
+    for name in "${names[@]}"; do
+        config=$(dpc_config "inference/shape500_$name.yaml")
+        inference+=("$config")
+        config=$(run_config "shape_${name}_rescore.yaml")
+        scoring+=("$config")
+    done
     chosen=$(submit -J front3d-shape500 "$SLURM_DIR/dpc_python.sbatch" "$TBX/scripts/front3d/eval/make_shape500.py" "$EXP")
     views=$(submit_after "$chosen" -J front3d-shape500-split \
         --wrap "cp '$EXP/eval/shape500/test_split_shape500.json' '$EXP/dpc_scenes/'")
     jobs=()
-    for name in im3d total3d; do
+    for index in 0 1; do
+        name=${names[$index]}
         infer=$(submit_after "$views" -J "front3d-shape500-$name" "${GPU[@]}" --time=12:00:00 "$SLURM_DIR/dpc_main.sbatch" \
-            "$(dpc_config "inference/shape500_$name.yaml")" test)
+            "${inference[$index]}" test)
         convert=$(submit_after "$infer" -J "front3d-shape-convert-$name" "$SLURM_DIR/dpc_python.sbatch" "$TBX/scripts/dpc/dpc_batch_convert.py" \
             "$EXP/eval/shape500/manifest_test.jsonl" "$EXP/eval/shape500/pred_$name" --repo "$DPC" --pred-root "out/shape500_$name" --obj-mesh-sibling obj_mesh)
-        jobs+=("$(submit_after "$convert" -J "front3d-shape-score-$name" "$SLURM_DIR/bench_run.sbatch" "$(run_config "shape_${name}_rescore.yaml")")")
+        jobs+=("$(submit_after "$convert" -J "front3d-shape-score-$name" "$SLURM_DIR/bench_run.sbatch" "${scoring[$index]}")")
     done
     report "shape: views $views, im3d ${jobs[0]}, total3d ${jobs[1]}"
     ;;

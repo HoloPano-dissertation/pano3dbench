@@ -21,10 +21,12 @@ run_config() {
 
 case "${1:-}" in
 heads)
+    mgn_config=$(dpc_config training/mgnet_igibson.yaml)
+    ldif_config=$(dpc_config training/ldif_igibson_scratch.yaml)
     targets=$(submit -J igibson-mgn-targets --cpus-per-task=8 "$SLURM_DIR/dpc_python.sbatch" \
         "$TBX/scripts/igibson/mgn_make_gt.py" "$DPC" --processes 8)
-    mgn=$(submit_after "$targets" -J igibson-mgn "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$(dpc_config training/mgnet_igibson.yaml)" qtrain)
-    ldif=$(submit -J igibson-ldif "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$(dpc_config training/ldif_igibson_scratch.yaml)" qtrain)
+    mgn=$(submit_after "$targets" -J igibson-mgn "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$mgn_config" qtrain)
+    ldif=$(submit -J igibson-ldif "${GPU[@]}" "$SLURM_DIR/dpc_main.sbatch" "$ldif_config" qtrain)
     report "heads: mgn targets $targets, mgn $mgn, ldif $ldif"
     ;;
 inference)
@@ -43,15 +45,22 @@ inference)
     report "inference: dpc $dpc, dpc_s20 $s20, im3d $im3d, im3d_trained $trained, total3d $total3d"
     ;;
 score)
+    outs=(pred pred_dpc_s20 pred_im3d pred_im3d_trained pred_total3d)
+    roots=(pano3d pano3d_dpc_s20 pano3d_im3d pano3d_im3d_trained pano3d_total3d)
+    names=(dpc dpc_s20 im3d im3d_trained total3d)
+    configs=()
+    for name in "${names[@]}"; do
+        config=$(run_config "${name}_rescore.yaml")
+        configs+=("$config")
+    done
     truth=$(submit -J igibson-ground-truth "$SLURM_DIR/dpc_python.sbatch" \
         "$TBX/scripts/igibson/dpc_build_igibson_manifest.py" "$DPC" "$BENCH" "$DPC/data/igibson/test.json")
     jobs=()
-    for pair in pred:pano3d:dpc pred_dpc_s20:pano3d_dpc_s20:dpc_s20 pred_im3d:pano3d_im3d:im3d \
-                pred_im3d_trained:pano3d_im3d_trained:im3d_trained pred_total3d:pano3d_total3d:total3d; do
-        IFS=: read -r out root name <<< "$pair"
+    for index in 0 1 2 3 4; do
+        name=${names[$index]}
         convert=$(submit_after "$truth" -J "igibson-convert-$name" "$SLURM_DIR/dpc_python.sbatch" \
-            "$TBX/scripts/dpc/dpc_batch_convert.py" "$BENCH/manifest.jsonl" "$BENCH/$out" --repo "$DPC" --pred-root "out/$root")
-        jobs+=("$(submit_after "$convert" -J "igibson-score-$name" "$SLURM_DIR/bench_run.sbatch" "$(run_config "${name}_rescore.yaml")")")
+            "$TBX/scripts/dpc/dpc_batch_convert.py" "$BENCH/manifest.jsonl" "$BENCH/${outs[$index]}" --repo "$DPC" --pred-root "out/${roots[$index]}")
+        jobs+=("$(submit_after "$convert" -J "igibson-score-$name" "$SLURM_DIR/bench_run.sbatch" "${configs[$index]}")")
     done
     report "score: ground truth $truth, dpc ${jobs[0]}, dpc_s20 ${jobs[1]}, im3d ${jobs[2]}, im3d_trained ${jobs[3]}, total3d ${jobs[4]}"
     ;;

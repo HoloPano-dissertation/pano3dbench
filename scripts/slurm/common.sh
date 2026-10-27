@@ -22,7 +22,12 @@ submit() {
 
 fill() {
     local target=$CONFIGS/$(basename "$1")
-    "$TBX_PYTHON" "$SLURM_DIR/fill_config.py" "$1" "$target" "${@:2}" >/dev/null
+    local weights=()
+    local item
+    for item in ${WEIGHTS:-}; do
+        weights+=(--weight "$item")
+    done
+    "$TBX_PYTHON" "$SLURM_DIR/fill_config.py" "$1" "$target" "${@:2}" ${weights[@]+"${weights[@]}"} >/dev/null || return 1
     echo "$target"
 }
 

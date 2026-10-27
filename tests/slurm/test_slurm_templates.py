@@ -41,23 +41,55 @@ fill_config = _load_fill()
 def dpc(tmp_path: Path) -> Path:
     root = tmp_path / "dpc"
     for training in TRAININGS:
-        for run in ("26100100000000", "26102000000000"):
-            run_dir = root / "out" / training / run
-            run_dir.mkdir(parents=True)
-            (run_dir / "model_best.pth").write_text("", encoding="utf-8")
+        run_dir = root / "out" / training / "26100100000000"
+        run_dir.mkdir(parents=True)
+        (run_dir / "model_best.pth").write_text("", encoding="utf-8")
     (root / "configs").mkdir()
     return root
 
 
-def test_run_placeholder_takes_the_latest_run_with_the_file(tmp_path: Path, dpc: Path) -> None:
-    template = tmp_path / "t.yaml"
-    text = "weight: ['/PATH/TO/out/ldif_front3d/RUN/model_best.pth']\n"
-    filled = fill_config.fill(text, template, None, dpc)
-    assert str(dpc / "out" / "ldif_front3d" / "26102000000000" / "model_best.pth") in filled
+LDIF_WEIGHT = "weight: ['/PATH/TO/out/ldif_front3d/RUN/model_best.pth']\n"
+
+
+def _second_run(dpc: Path) -> Path:
+    second = dpc / "out" / "ldif_front3d" / "26102000000000"
+    second.mkdir()
+    (second / "model_best.pth").write_text("", encoding="utf-8")
+    return second
+
+
+def test_the_only_run_with_the_file_is_taken(tmp_path: Path, dpc: Path) -> None:
+    filled = fill_config.fill(LDIF_WEIGHT, tmp_path / "t.yaml", None, dpc)
+    assert str(dpc / "out" / "ldif_front3d" / "26100100000000" / "model_best.pth") in filled
+
+
+def test_several_runs_are_not_guessed(tmp_path: Path, dpc: Path) -> None:
+    _second_run(dpc)
+    with pytest.raises(SystemExit, match="Several model_best.pth of 'ldif_front3d'"):
+        fill_config.fill(LDIF_WEIGHT, tmp_path / "t.yaml", None, dpc)
+
+
+def test_weights_in_the_training_folder_count_as_a_candidate(tmp_path: Path, dpc: Path) -> None:
+    (dpc / "out" / "ldif_front3d" / "model_best.pth").write_text("", encoding="utf-8")
+    with pytest.raises(SystemExit, match="Several"):
+        fill_config.fill(LDIF_WEIGHT, tmp_path / "t.yaml", None, dpc)
+
+
+@pytest.mark.parametrize("as_folder", [False, True])
+def test_chosen_weights_win(tmp_path: Path, dpc: Path, as_folder: bool) -> None:
+    second = _second_run(dpc)
+    chosen = second if as_folder else second / "model_best.pth"
+    filled = fill_config.fill(LDIF_WEIGHT, tmp_path / "t.yaml", None, dpc, {"ldif_front3d": chosen})
+    assert str(second / "model_best.pth") in filled
+
+
+def test_chosen_weights_must_exist(tmp_path: Path, dpc: Path) -> None:
+    with pytest.raises(SystemExit, match="do not exist"):
+        fill_config.fill(LDIF_WEIGHT, tmp_path / "t.yaml", None, dpc, {"ldif_front3d": tmp_path / "nope.pth"})
 
 
 def test_missing_run_is_an_error(tmp_path: Path) -> None:
-    with pytest.raises(SystemExit, match="No run of 'ldif_front3d'"):
+    with pytest.raises(SystemExit, match="No model_best.pth of 'ldif_front3d'"):
         fill_config.fill(
             "weight: '/PATH/TO/out/ldif_front3d/RUN/model_best.pth'\n",
             tmp_path / "t.yaml",
@@ -113,7 +145,9 @@ def test_every_referenced_repository_file_exists(script: Path) -> None:
         assert (CONFIGS / dataset / "dpc" / relative).is_file(), relative
 
 
-def _submit(tmp_path: Path, dpc: Path, script: str, step: str, **env: str) -> list[list[str]]:
+def _submit(
+    tmp_path: Path, dpc: Path, script: str, step: str, *, expect_ok: bool = True, **env: str
+) -> list[list[str]]:
     fake = tmp_path / "bin"
     fake.mkdir(exist_ok=True)
     (fake / "sbatch").write_text(FAKE_SBATCH, encoding="utf-8")
@@ -135,7 +169,7 @@ def _submit(tmp_path: Path, dpc: Path, script: str, step: str, **env: str) -> li
         text=True,
         check=False,
     )
-    assert completed.returncode == 0, completed.stderr
+    assert (completed.returncode == 0) == expect_ok, completed.stderr
     calls = (record / "calls").read_text(encoding="utf-8").split("\n") if (record / "calls").exists() else []
     return [call.rstrip("\0").split("\0") for call in calls if call]
 
@@ -163,6 +197,19 @@ def test_front3d_steps_submit_their_jobs(tmp_path: Path, dpc: Path, exp: Path, s
             for job in dependency.split(":")[1:]:
                 assert int(job) < int(call[0])
     assert all("/PATH/TO" not in path.read_text(encoding="utf-8") for path in (exp / "slurm_configs").glob("*.yaml"))
+
+
+def test_ambiguous_weights_stop_the_step_before_any_submission(tmp_path: Path, dpc: Path, exp: Path) -> None:
+    _second_run(dpc)
+    calls = _submit(tmp_path, dpc, "front3d.sh", "inference", expect_ok=False, EXP=str(exp))
+    assert calls == []
+
+
+def test_weights_variable_picks_the_run(tmp_path: Path, dpc: Path, exp: Path) -> None:
+    second = _second_run(dpc)
+    _submit(tmp_path, dpc, "front3d.sh", "inference", EXP=str(exp), WEIGHTS=f"ldif_front3d={second}")
+    filled = (exp / "slurm_configs" / "pano3d_front3d_im3d.yaml").read_text(encoding="utf-8")
+    assert str(second / "model_best.pth") in filled
 
 
 def test_front3d_chains_after_an_outside_job(tmp_path: Path, dpc: Path, exp: Path) -> None:

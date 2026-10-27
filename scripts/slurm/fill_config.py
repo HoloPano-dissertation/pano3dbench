@@ -10,21 +10,40 @@ RUN_PLACEHOLDER = re.compile(r"/PATH/TO/out/([^/]+)/RUN/([^'\"\s,\]]+)")
 RELATIVE_KEYS = re.compile(r"^(extends|output_dir):(\s*)(['\"]?)([^'\"\s#]+)(['\"]?)", re.MULTILINE)
 
 
-def latest_run(dpc: Path, training: str, file_name: str) -> Path:
-    runs = sorted(
-        path.parent
-        for path in (dpc / "out" / training).glob(f"*/{file_name}")
+def resolve_weight(dpc: Path, training: str, file_name: str, chosen: dict[str, Path]) -> Path:
+    if training in chosen:
+        path = chosen[training]
+        path = path / file_name if path.is_dir() else path
+        if not path.is_file():
+            raise SystemExit(f"Weights given for '{training}' do not exist: {path}")
+        return path
+    root = dpc / "out" / training
+    candidates = sorted(
+        path
+        for path in (root / file_name, *root.glob(f"*/{file_name}"))
         if path.is_file()
     )
-    if not runs:
-        raise SystemExit(f"No run of '{training}' with {file_name} under {dpc / 'out'}")
-    return runs[-1]
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        raise SystemExit(f"No {file_name} of '{training}' under {root}")
+    listed = "\n  ".join(str(path) for path in candidates)
+    raise SystemExit(
+        f"Several {file_name} of '{training}', choose one with "
+        f"--weight {training}=<file>:\n  {listed}"
+    )
 
 
-def fill(text: str, template: Path, exp: Path | None, dpc: Path | None) -> str:
+def fill(
+    text: str,
+    template: Path,
+    exp: Path | None,
+    dpc: Path | None,
+    chosen: dict[str, Path] | None = None,
+) -> str:
     if dpc is not None:
         text = RUN_PLACEHOLDER.sub(
-            lambda match: str(latest_run(dpc, match.group(1), match.group(2)) / match.group(2)),
+            lambda match: str(resolve_weight(dpc, match.group(1), match.group(2), chosen or {})),
             text,
         )
         text = text.replace("/PATH/TO/Pano3D", str(dpc))
@@ -51,9 +70,22 @@ def main() -> int:
     parser.add_argument("output", type=Path)
     parser.add_argument("--exp", type=Path, help="3D-FRONT experiment folder")
     parser.add_argument("--dpc", type=Path, help="DeepPanoContext clone")
+    parser.add_argument(
+        "--weight",
+        action="append",
+        default=[],
+        metavar="TRAINING=PATH",
+        help="weights for /PATH/TO/out/TRAINING/RUN/: a file or a run folder",
+    )
     args = parser.parse_args()
+    chosen = {}
+    for item in args.weight:
+        training, separator, path = item.partition("=")
+        if not separator:
+            raise SystemExit(f"--weight expects TRAINING=PATH, got '{item}'")
+        chosen[training] = Path(path).expanduser()
     template = args.template.resolve()
-    text = fill(template.read_text(encoding="utf-8"), template, args.exp, args.dpc)
+    text = fill(template.read_text(encoding="utf-8"), template, args.exp, args.dpc, chosen)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(text, encoding="utf-8")
     print(args.output)
