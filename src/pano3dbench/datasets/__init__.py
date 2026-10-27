@@ -1,7 +1,8 @@
-from pano3dbench.datasets.base import BaseDatasetLoader
-from pano3dbench.datasets.manifest import ManifestDatasetLoader
+from pano3dbench.datasets.base import DATASET_LOADERS, DatasetLoader
+from pano3dbench.datasets.manifest_dataset import ManifestDatasetLoader
 
 __all__ = [
-    "BaseDatasetLoader",
+    "DATASET_LOADERS",
+    "DatasetLoader",
     "ManifestDatasetLoader",
 ]

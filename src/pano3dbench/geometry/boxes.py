@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-from pano3dbench.polygon import Point2D, convex_intersection_area
+from pano3dbench.geometry.polygon import Point2D, convex_intersection_area
 
 
 def _vector3(value: Sequence[float], field_name: str) -> tuple[float, float, float]:
@@ -24,6 +25,7 @@ _CORNER_SIGNS = tuple(
     for sy in (-1.0, 1.0)
     for sz in (-1.0, 1.0)
 )
+
 
 @dataclass(frozen=True)
 class BoundingBox3D:
@@ -49,7 +51,7 @@ class BoundingBox3D:
             result *= max(0.0, dimension)
         return result
 
-    def intersection_volume(self, other: "BoundingBox3D | OrientedBox3D") -> float:
+    def intersection_volume(self, other: BoundingBox3D | OrientedBox3D) -> float:
         if isinstance(other, OrientedBox3D):
             return self.as_oriented().intersection_volume(other)
         result = 1.0
@@ -62,14 +64,10 @@ class BoundingBox3D:
             result *= max(0.0, min(own_max, other_max) - max(own_min, other_min))
         return result
 
-    def iou(self, other: "BoundingBox3D | OrientedBox3D") -> float:
-        if isinstance(other, OrientedBox3D):
-            return self.as_oriented().iou(other)
-        intersection = self.intersection_volume(other)
-        union = self.volume + other.volume - intersection
-        return intersection / union if union > 0.0 else 0.0
+    def iou(self, other: BoundingBox3D | OrientedBox3D) -> float:
+        return box_iou(self, other)
 
-    def as_oriented(self) -> "OrientedBox3D":
+    def as_oriented(self) -> OrientedBox3D:
         centre = tuple(
             (low + high) / 2.0
             for low, high in zip(self.min_corner, self.max_corner)
@@ -147,7 +145,7 @@ class OrientedBox3D:
         heights = [corner[2] for corner in self.corners()]
         return min(heights), max(heights)
 
-    def intersection_volume(self, other: "BoundingBox3D | OrientedBox3D") -> float:
+    def intersection_volume(self, other: BoundingBox3D | OrientedBox3D) -> float:
         box = other.as_oriented() if isinstance(other, BoundingBox3D) else other
         area = convex_intersection_area(self._footprint(), box._footprint())
         if area <= 0.0:
@@ -158,13 +156,10 @@ class OrientedBox3D:
         intersection = area * vertical
         return min(intersection, self.volume, box.volume)
 
-    def iou(self, other: "BoundingBox3D | OrientedBox3D") -> float:
-        box = other.as_oriented() if isinstance(other, BoundingBox3D) else other
-        intersection = self.intersection_volume(box)
-        union = self.volume + box.volume - intersection
-        return intersection / union if union > 0.0 else 0.0
+    def iou(self, other: BoundingBox3D | OrientedBox3D) -> float:
+        return box_iou(self, other)
 
-    def as_oriented(self) -> "OrientedBox3D":
+    def as_oriented(self) -> OrientedBox3D:
         return self
 
     def to_dict(self) -> dict[str, list[Any]]:
@@ -183,7 +178,17 @@ class OrientedBox3D:
         )
 
 
-def parse_box(data: Mapping[str, Any]) -> "BoundingBox3D | OrientedBox3D":
+def box_iou(
+    first: BoundingBox3D | OrientedBox3D, second: BoundingBox3D | OrientedBox3D
+) -> float:
+    if isinstance(first, OrientedBox3D) or isinstance(second, OrientedBox3D):
+        first, second = first.as_oriented(), second.as_oriented()
+    intersection = first.intersection_volume(second)
+    union = first.volume + second.volume - intersection
+    return intersection / union if union > 0.0 else 0.0
+
+
+def parse_box(data: Mapping[str, Any]) -> BoundingBox3D | OrientedBox3D:
     if "basis" in data or "center" in data:
         return OrientedBox3D.from_dict(data)
     return BoundingBox3D.from_dict(data)

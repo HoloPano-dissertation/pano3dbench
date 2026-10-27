@@ -42,37 +42,56 @@ cat artifacts/echo/report.md
 
 ## Компоненты
 
+Один прогон `pano3dbench run` читается как цепочка: загрузить примеры → получить
+предсказания → посчитать показатели → сохранить отчёт. Каждая папка ядра отвечает за
+одно звено.
+
+Какой файл за что отвечает и с чего читать код — в
+[src/pano3dbench/README.md](../src/pano3dbench/README.md); у каждой папки ядра свой README.
+Вся сборка эксперимента умещается в одну функцию (`experiment.py`):
+
+```python
+def run_experiment(config_path):
+    config = ExperimentConfig.fromfile(config_path)
+    evaluator = Evaluator(
+        config=config,
+        dataset=create_dataset(config.dataset),
+        prediction_source=create_prediction_source(config.model, config.seed),
+        metrics=create_metrics(config.metrics),
+    )
+    return evaluator.run()
+```
+
 ```mermaid
 classDiagram
-    class BaseSceneEstimator {
+    class PredictionSource {
         <<abstract>>
         +predict(sample) SceneOutput
-        +create(name, parameters)
+        +predict_many(samples)
     }
-    class SubprocessSceneEstimator {
+    class RunnerPredictionSource {
         +predict(sample) SceneOutput
         +provenance() dict
     }
-    class FixtureEstimator
-    class BaseDatasetLoader {
+    class SavedPredictionSource
+    class DatasetLoader {
         <<abstract>>
-        +samples() Iterator~SceneSample~
-        +create(name, parameters)
+        +__iter__() Iterator~SceneSample~
     }
-    class BaseMetric {
+    class Metric {
         <<abstract>>
         +compute(prediction, groundTruth) float
-        +create(name, parameters)
     }
     class Evaluator {
         +run() EvaluationResult
     }
+    class ResultWriter
     class SceneOutput {
         +layout
         +objects
         +relations
     }
-    class BaseEnvironmentManager {
+    class EnvironmentManager {
         <<abstract>>
         +prepare(spec) EnvHandle
         +resolve(spec) EnvHandle
@@ -83,22 +102,26 @@ classDiagram
         +runner
     }
 
-    BaseSceneEstimator <|-- SubprocessSceneEstimator
-    BaseSceneEstimator <|-- FixtureEstimator
-    Evaluator --> BaseSceneEstimator
-    Evaluator --> BaseDatasetLoader
-    Evaluator --> BaseMetric
+    PredictionSource <|-- RunnerPredictionSource
+    PredictionSource <|-- SavedPredictionSource
+    Evaluator --> DatasetLoader
+    Evaluator --> PredictionSource
+    Evaluator --> Metric
+    Evaluator --> ResultWriter
     Evaluator --> SceneOutput
-    SubprocessSceneEstimator ..> BaseEnvironmentManager
-    BaseEnvironmentManager --> EnvironmentSpec
+    RunnerPredictionSource ..> EnvironmentManager
+    EnvironmentManager --> EnvironmentSpec
 ```
 
-Точки расширения устроены как «абстрактный класс + реестр»: реализации регистрируются
-декоратором. Несколько имён в конфигурации могут указывать на одну реализацию через
-`registry.alias` (`dpc` → `SubprocessSceneEstimator`, `igibson` → `ManifestDatasetLoader`):
-конфигурации читаются по названию метода, а что именно запускается, решают спецификация
-окружения и её раннер. Так устроены оценщик, загрузчик набора, показатели и менеджер
-окружений.
+Точки расширения устроены как «абстрактный класс + реестр»: реестр лежит рядом с базовым
+классом (`DATASET_LOADERS`, `PREDICTION_SOURCES`, `METRICS`, `ENVIRONMENT_MANAGERS`),
+реализации регистрируются в нём декоратором. Параметры из конфигурации передаются в
+конструктор как именованные аргументы, поэтому опечатка в имени параметра сразу даёт
+ошибку. Несколько имён в конфигурации могут указывать на одну реализацию через `alias`
+(`dpc` → `RunnerPredictionSource`, `igibson` → `ManifestDatasetLoader`): конфигурации
+читаются по названию метода, а что именно запускается, решают спецификация окружения и её
+раннер. Имена в YAML не изменились: `model.type: fixture` — это `SavedPredictionSource`,
+`subprocess` и `dpc` — `RunnerPredictionSource`.
 
 ## Изоляция модели
 
@@ -128,7 +151,7 @@ flowchart LR
 ## Менеджер окружений
 
 Окружение модели описывается декларативной спецификацией `EnvironmentSpec`
-(`configs/environments/*.yaml`); `BaseEnvironmentManager` собирает и находит его через
+(`configs/environments/*.yaml`); `EnvironmentManager` собирает и находит его через
 бэкенды:
 
 | Бэкенд  | Назначение                                                             |
@@ -349,10 +372,11 @@ run.json                   конфигурация, время, ревизия 
     1. `configs/environments/<модель>.yaml` — спецификация окружения (бэкенд, репозиторий,
        веса, раннер);
     2. `runners/<модель>_runner.py` — вывод и перевод в `SceneOutput` по договору
-       [runners/README.md](../runners/README.md), с помощниками из `runners/_common.py`.
+       [runners/README.md](../runners/README.md), с помощниками из `runners/runner_protocol.py` (чтение запроса, запись ответа) и
+       `runners/scene_payload.py` (словари рамок и сцены).
 
   Затем `env prepare --env configs/environments/<модель>.yaml` и обычный `run`.
   Минимальный пример — `echo` (`runners/echo_runner.py` + `configs/environments/echo.yaml`).
 
-Новые компоненты регистрируются в реестрах (`registry.py`): `BaseSceneEstimator`,
-`BaseDatasetLoader`, `BaseMetric`, `BaseEnvironmentManager`.
+Новые компоненты регистрируются в реестрах рядом с базовыми классами: `PREDICTION_SOURCES`,
+`DATASET_LOADERS`, `METRICS`, `ENVIRONMENT_MANAGERS`.

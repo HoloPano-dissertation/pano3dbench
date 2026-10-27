@@ -3,7 +3,7 @@ from __future__ import annotations
 from pano3dbench.environments.spec import EnvironmentSpec
 
 
-def _env_init_lines(module_load: "str | None") -> list[str]:
+def _env_init_lines(module_load: str | None) -> list[str]:
     lines: list[str] = []
 
     if module_load:
@@ -31,12 +31,12 @@ def _env_init_lines(module_load: "str | None") -> list[str]:
 
 def generate_submit_script(
     env_path: str,
-    config_path: "str | None" = None,
+    config_path: str | None = None,
     *,
     spec: EnvironmentSpec,
     scheduler: str = "slurm",
     gpus: int = 0,
-    module_load: "str | None" = "anaconda",
+    module_load: str | None = "anaconda",
     time: str = "04:00:00",
 ) -> str:
     lines = ["#!/bin/bash"]

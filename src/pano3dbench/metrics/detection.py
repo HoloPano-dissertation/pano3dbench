@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from typing import Any, Mapping, Sequence
+from typing import Any
 
-from pano3dbench.domain import SceneObject, SceneOutput
-from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.metrics.base import METRICS, Metric
 from pano3dbench.metrics.matching import greedy_match
+from pano3dbench.scene import SceneObject, SceneOutput
 
 
 class _ClassProtocol:
@@ -114,8 +115,8 @@ def _average_precision(
     return _ap_from_detections(detections, len(labels))
 
 
-@BaseMetric.registry.register("object_map")
-class ObjectDetectionMAP(BaseMetric):
+@METRICS.register("object_map")
+class ObjectDetectionMAP(Metric):
     name = "object_map"
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -155,8 +156,8 @@ class ObjectDetectionMAP(BaseMetric):
         return sum(average_precisions) / len(average_precisions)
 
 
-@BaseMetric.registry.register("object_map_dataset")
-class ObjectDetectionMAPDataset(BaseMetric):
+@METRICS.register("object_map_dataset")
+class ObjectDetectionMAPDataset(Metric):
     name = "object_map_dataset"
     dataset_level = True
 

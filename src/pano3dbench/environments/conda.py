@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from pano3dbench.environments.base import BaseEnvironmentManager, EnvHandle
+from pano3dbench.environments.base import ENVIRONMENT_MANAGERS, EnvHandle, EnvironmentManager
 from pano3dbench.environments.patches import apply_patches
 from pano3dbench.environments.spec import EnvironmentSpec
 from pano3dbench.environments.steps import (
@@ -21,9 +21,9 @@ LOGGER = logging.getLogger("pano3dbench.environments")
 PIP_NET_FLAGS = ["--retries", "10", "--timeout", "120"]
 
 
-@BaseEnvironmentManager.registry.register("conda")
-class CondaEnvironmentManager(BaseEnvironmentManager):
-    def _env_file(self, spec: EnvironmentSpec, repo_dir: Path) -> "Path | None":
+@ENVIRONMENT_MANAGERS.register("conda")
+class CondaEnvironmentManager(EnvironmentManager):
+    def _env_file(self, spec: EnvironmentSpec, repo_dir: Path) -> Path | None:
         if not spec.env_file:
             return None
         committed = spec.base_dir / spec.env_file
@@ -52,7 +52,7 @@ class CondaEnvironmentManager(BaseEnvironmentManager):
                 return True
         return False
 
-    def _env_exists(self, spec: EnvironmentSpec) -> bool:
+    def environment_exists(self, spec: EnvironmentSpec) -> bool:
         return self._conda_env_present(spec.name)
 
     def prepare(self, spec: EnvironmentSpec) -> EnvHandle:

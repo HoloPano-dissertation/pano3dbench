@@ -90,7 +90,7 @@ conda run -n Pano3D python $TBX/scripts/igibson/dpc_build_igibson_manifest.py \
 добавляет каждому предмету его замкнутую сетку `<корень>/<model_path>/mesh_watertight.ply`
 для показателей формы.
 
-После любой правки `runners/_common.py` или `dpc_runner.convert_data_pkl` эталон нужно
+После любой правки `runners/scene_payload.py` или `dpc_runner.convert_data_pkl` эталон нужно
 построить заново: стороны сравнения строятся одним кодом.
 
 **`mgn_make_gt.py`**

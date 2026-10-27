@@ -5,7 +5,7 @@ from typing import Any, NoReturn
 import pytest
 
 from pano3dbench.environments import EnvironmentSpec
-from pano3dbench.environments.base import BaseEnvironmentManager, EnvHandle
+from pano3dbench.environments.base import EnvHandle, EnvironmentManager
 from pano3dbench.environments.plan import (
     DONE,
     NETWORK,
@@ -40,7 +40,7 @@ def staging(tmp_path: Path) -> Path:
     return path
 
 
-class _FakeManager(BaseEnvironmentManager):
+class _FakeManager(EnvironmentManager):
     def __init__(self, exists: bool = False) -> None:
         super().__init__()
         self.exists = exists
@@ -51,7 +51,7 @@ class _FakeManager(BaseEnvironmentManager):
     def resolve(self, spec) -> EnvHandle:  # noqa: ANN001, ARG002
         return EnvHandle()
 
-    def _env_exists(self, spec) -> bool:  # noqa: ANN001, ARG002
+    def environment_exists(self, spec) -> bool:  # noqa: ANN001, ARG002
         return self.exists
 
 

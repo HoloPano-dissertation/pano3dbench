@@ -108,7 +108,7 @@ pano3dbench run --config configs/igibson/runs/total3d.yaml
 Конфигурации отличаются только `runner_args`: какой папкой вывода пользоваться и как
 назвать метод. Почему у методов один раннер — в [methods.md](methods.md).
 
-Эталон строится тем же кодом, что и предсказания (`runners/_common.py`,
+Эталон строится тем же кодом, что и предсказания (`runners/scene_payload.py`,
 `dpc_runner.convert_data_pkl`). После любой правки этого кода эталон нужно построить
 заново, иначе стороны станут несравнимы.
 
@@ -143,7 +143,7 @@ DPC@20 — тот же запуск, но с `optimize_steps: 20` в настр�
 `--model.scene_gcn.relation_adjust False` и `--log.path out/pano3d_im3d_trained`.
 Имена папок вывода должны совпадать с `--pred-root` в конфигурациях `configs/igibson/runs/`. Конфигурации
 `configs/pano3d_igibson*.yaml` лежат
-в самом DeepPanoContext; наши `configs/igibson/dpc/pano3d_igibson_im3d.yaml` и
+в самом DeepPanoContext; наши `configs/igibson/dpc/inference/pano3d_igibson_im3d.yaml` и
 `pano3d_igibson_total3d.yaml` нужно положить рядом с ними.
 
 Обучение голов формы:
@@ -154,7 +154,7 @@ conda run -n Pano3D python main.py configs/mgnet_igibson.yaml --mode qtrain
 conda run -n Pano3D python main.py configs/ldif_igibson_scratch.yaml --mode qtrain
 ```
 
-`mgnet_igibson.yaml` и `ldif_igibson_scratch.yaml` берутся из `configs/igibson/dpc/` и
+`mgnet_igibson.yaml` и `ldif_igibson_scratch.yaml` берутся из `configs/igibson/dpc/training/` и
 кладутся в `configs/` DeepPanoContext. Для обучения расширение ChamferDistance на CUDA
 должно действительно собраться (для вывода его можно не собирать).
 

@@ -1,11 +1,5 @@
-from pano3dbench.domain import (
-    BoundingBox3D,
-    OrientedBox3D,
-    SceneObject,
-    SceneOutput,
-    SceneRelation,
-    SceneSample,
-)
+from pano3dbench.geometry.boxes import BoundingBox3D, OrientedBox3D
+from pano3dbench.scene import SceneObject, SceneOutput, SceneRelation, SceneSample
 
 __all__ = [
     "BoundingBox3D",

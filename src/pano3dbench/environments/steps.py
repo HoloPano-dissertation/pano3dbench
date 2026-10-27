@@ -7,8 +7,8 @@ import shutil
 import subprocess
 import urllib.request
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from pano3dbench.environments.spec import CheckpointSpec, RepoSpec
 
@@ -28,8 +28,8 @@ def which_or_raise(name: str) -> str:
 def run_step(
     command: Sequence[object],
     *,
-    cwd: "Path | None" = None,
-    env: "dict[str, str] | None" = None,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
     check: bool = True,
 ) -> subprocess.CompletedProcess:
     rendered = [str(part) for part in command]
@@ -79,7 +79,7 @@ def checkpoint_path(checkpoint: CheckpointSpec, repo_dir: Path) -> Path:
     return dest if dest.is_absolute() else repo_dir / dest
 
 
-def local_artifacts_dir() -> "Path | None":
+def local_artifacts_dir() -> Path | None:
     value = os.environ.get("PANO3DBENCH_ARTIFACTS")
     return Path(value).expanduser() if value else None
 

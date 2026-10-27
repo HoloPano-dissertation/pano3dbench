@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
-from pano3dbench.io.deserialization import read_mapping_file
+from pano3dbench.config.loader import read_mapping_file
 
 DEFAULT_WORKSPACE = ".pano3dbench"
 
@@ -51,7 +52,7 @@ class EnvironmentSpec:
     patches: tuple[Mapping[str, Any], ...] = ()
     env: Mapping[str, str] = field(default_factory=dict)
 
-    def fingerprint(self, repo_dir: "Path | None" = None) -> str:
+    def fingerprint(self, repo_dir: Path | None = None) -> str:
         payload = {
             "backend": self.backend,
             "python": self.python,
@@ -78,7 +79,7 @@ class EnvironmentSpec:
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
 
 
-def _read_text_safe(path: Path) -> "str | None":
+def _read_text_safe(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8")
     except OSError:
@@ -86,8 +87,8 @@ def _read_text_safe(path: Path) -> "str | None":
 
 
 def _read_env_file_text(
-    name: "str | None", base_dir: Path, repo_dir: "Path | None"
-) -> "str | None":
+    name: str | None, base_dir: Path, repo_dir: Path | None
+) -> str | None:
     if not name:
         return None
     if repo_dir is not None:
@@ -98,8 +99,8 @@ def _read_env_file_text(
 
 
 def load_environment_spec(
-    source: "str | Path | Mapping[str, Any] | EnvironmentSpec",
-    base_dir: "str | Path | None" = None,
+    source: str | Path | Mapping[str, Any] | EnvironmentSpec,
+    base_dir: str | Path | None = None,
 ) -> EnvironmentSpec:
     if isinstance(source, EnvironmentSpec):
         return source

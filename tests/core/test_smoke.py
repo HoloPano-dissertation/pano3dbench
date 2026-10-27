@@ -1,10 +1,12 @@
 from pathlib import Path
 
 from pano3dbench.config import ExperimentConfig
-from pano3dbench.datasets import BaseDatasetLoader
-from pano3dbench.evaluator import Evaluator
-from pano3dbench.metrics import BaseMetric
-from pano3dbench.models import BaseSceneEstimator
+from pano3dbench.evaluation import Evaluator
+from pano3dbench.experiment import (
+    create_dataset,
+    create_metrics,
+    create_prediction_source,
+)
 
 
 def test_example_pipeline(repo_root: Path, tmp_path: Path) -> None:
@@ -18,15 +20,12 @@ def test_example_pipeline(repo_root: Path, tmp_path: Path) -> None:
         metrics=config.metrics,
         source_path=config.source_path,
     )
-    estimator = BaseSceneEstimator.create(
-        config.model.type, dict(config.model.parameters)
-    )
-    dataset = BaseDatasetLoader.create(
-        config.dataset.type, dict(config.dataset.parameters)
-    )
-    metrics = [BaseMetric.create(m.type, dict(m.parameters)) for m in config.metrics]
-
-    result = Evaluator(config, estimator, dataset, metrics).run()
+    result = Evaluator(
+        config,
+        create_dataset(config.dataset),
+        create_prediction_source(config.model, config.seed),
+        create_metrics(config.metrics),
+    ).run()
 
     assert result.scene_count == 1
     assert result.summary["layout_iou_3d"]["mean"] == 1.0

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from pano3dbench.environments.base import BaseEnvironmentManager
+from pano3dbench.environments.base import EnvironmentManager
 from pano3dbench.environments.spec import EnvironmentSpec
 from pano3dbench.environments.steps import (
     checkpoint_path,
@@ -27,7 +27,7 @@ class PlanStep:
     detail: str = ""
 
 
-def build_plan(spec: EnvironmentSpec, manager: BaseEnvironmentManager) -> list[PlanStep]:
+def build_plan(spec: EnvironmentSpec, manager: EnvironmentManager) -> list[PlanStep]:
     steps: list[PlanStep] = []
     repo_dir = manager.repo_dir(spec)
 
@@ -81,7 +81,7 @@ def build_plan(spec: EnvironmentSpec, manager: BaseEnvironmentManager) -> list[P
     return steps
 
 
-def verify_checkpoints(spec: EnvironmentSpec, manager: BaseEnvironmentManager) -> list[str]:
+def verify_checkpoints(spec: EnvironmentSpec, manager: EnvironmentManager) -> list[str]:
     problems: list[str] = []
     repo_dir = manager.repo_dir(spec)
     for checkpoint in spec.checkpoints:

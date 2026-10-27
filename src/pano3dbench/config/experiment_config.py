@@ -6,9 +6,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Any
 
-
-class ConfigError(Exception):
-    pass
+from pano3dbench.config.loader import ConfigError, load_map_chain
 
 
 @dataclass(frozen=True)
@@ -39,8 +37,6 @@ class ExperimentConfig:
 
     @classmethod
     def fromfile(cls, path: str | Path) -> ExperimentConfig:
-        from pano3dbench.io.deserialization import load_map_chain
-
         source_path = Path(path).expanduser().resolve()
         layered = load_map_chain(source_path)
         output_dir = Path(str(layered.get("output_dir") or "artifacts")).expanduser()

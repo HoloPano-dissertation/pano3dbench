@@ -5,8 +5,9 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from pano3dbench.environments.spec import EnvironmentSpec
 from pano3dbench.registry import ComponentRegistry
@@ -22,25 +23,15 @@ class EnvHandle:
     wrapper: tuple[str, ...] = ()
 
 
-class BaseEnvironmentManager(ABC):
-    registry: ComponentRegistry[BaseEnvironmentManager] = ComponentRegistry(
-        "environment manager"
-    )
-
-    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
-        self.parameters = dict(parameters or {})
+class EnvironmentManager(ABC):
+    @abstractmethod
+    def prepare(self, spec: EnvironmentSpec) -> EnvHandle: ...
 
     @abstractmethod
-    def prepare(self, spec: EnvironmentSpec) -> EnvHandle:
-        """Idempotently build the environment (one-off, may be slow)."""
+    def resolve(self, spec: EnvironmentSpec) -> EnvHandle: ...
 
     @abstractmethod
-    def resolve(self, spec: EnvironmentSpec) -> EnvHandle:
-        """Return the command prefix / working directory / variables for the runner."""
-
-    @abstractmethod
-    def _env_exists(self, spec: EnvironmentSpec) -> bool:
-        """Whether the environment physically exists."""
+    def environment_exists(self, spec: EnvironmentSpec) -> bool: ...
 
     def repo_dir(self, spec: EnvironmentSpec) -> Path:
         return spec.workspace / "repos" / spec.name
@@ -54,11 +45,8 @@ class BaseEnvironmentManager(ABC):
             env.setdefault("CUDA_VISIBLE_DEVICES", "")
         return env
 
-    def environment_exists(self, spec: EnvironmentSpec) -> bool:
-        return self._env_exists(spec)
-
     def adopt(self, spec: EnvironmentSpec) -> None:
-        if not self._env_exists(spec):
+        if not self.environment_exists(spec):
             raise RuntimeError(
                 f"Cannot adopt '{spec.name}' ({spec.backend}): the environment does not "
                 f"exist yet. Run 'pano3dbench env prepare' to build it."
@@ -83,14 +71,14 @@ class BaseEnvironmentManager(ABC):
         )
         return (
             data.get("fingerprint") == spec.fingerprint(fingerprint_root)
-            and self._env_exists(spec)
+            and self.environment_exists(spec)
         )
 
     def _write_marker(
         self,
         spec: EnvironmentSpec,
         extra: Mapping[str, Any] | None = None,
-        repo_dir: "Path | None" = None,
+        repo_dir: Path | None = None,
     ) -> None:
         marker = self.marker_path(spec)
         marker.parent.mkdir(parents=True, exist_ok=True)
@@ -107,8 +95,7 @@ class BaseEnvironmentManager(ABC):
             json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
-    @classmethod
-    def create(
-        cls, name: str, parameters: dict[str, Any] | None = None
-    ) -> BaseEnvironmentManager:
-        return cls.registry.create(name, parameters)
+
+ENVIRONMENT_MANAGERS: ComponentRegistry[EnvironmentManager] = ComponentRegistry(
+    "environment manager"
+)

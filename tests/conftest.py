@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pano3dbench.domain import SceneSample
+from pano3dbench.scene import SceneSample
 from pano3dbench.environments import EnvironmentSpec, load_environment_spec
 
 

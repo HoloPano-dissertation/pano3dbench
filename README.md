@@ -82,7 +82,10 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 | [docs/methods.md](docs/methods.md)                                     | три метода как конфигурации DPC, выбор конфигурации запуска               |
 | [docs/metrics.md](docs/metrics.md)                                     | каждый показатель, протокол классов, форма, свой показатель               |
 | [docs/architecture.md](docs/architecture.md)                           | устройство, команды, окружения, кластер, подключение своей модели         |
+| [src/pano3dbench/README.md](src/pano3dbench/README.md)                 | устройство ядра: какой файл за что отвечает, с чего читать код            |
 | [src/pano3dbench/metrics/README.md](src/pano3dbench/metrics/README.md) | как по шагам считается каждый показатель                                  |
+| [configs/igibson/dpc/README.md](configs/igibson/dpc/README.md)         | обучение голов формы и вывод на iGibson                                   |
+| [tests/README.md](tests/README.md)                                     | что проверяет каждая папка тестов                                         |
 | [configs/README.md](configs/README.md)                                 | за что отвечает каждая конфигурация                                       |
 | [scripts/README.md](scripts/README.md)                                 | за что отвечает каждый скрипт и с какими аргументами он запускается       |
 | [runners/README.md](runners/README.md)                                 | договор раннера модели                                                    |

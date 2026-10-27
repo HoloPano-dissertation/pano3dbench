@@ -6,26 +6,23 @@ from typing import Optional
 import pytest
 
 from pano3dbench.config import ComponentConfig, ExperimentConfig
-from pano3dbench.datasets.base import BaseDatasetLoader
-from pano3dbench.domain import (
-    BoundingBox3D,
-    SceneObject,
-    SceneOutput,
-    SceneSample,
-)
-from pano3dbench.evaluator import Evaluator, _aggregate
-from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.datasets import DatasetLoader
+from pano3dbench.geometry.boxes import BoundingBox3D
+from pano3dbench.scene import SceneObject, SceneOutput, SceneSample
+from pano3dbench.evaluation import Evaluator
+from pano3dbench.evaluation.aggregation import aggregate
+from pano3dbench.metrics.base import Metric
 from pano3dbench.metrics import (
     CollisionRate,
     LayoutIoU3D,
     ObjectDetectionMAPDataset,
 )
-from pano3dbench.models.base import BaseSceneEstimator
+from pano3dbench.predictions import PredictionSource
 
 UNIT_BOX = BoundingBox3D((0, 0, 0), (1, 1, 1))
 
 
-class _NaNWhenEmptyMetric(BaseMetric):
+class _NaNWhenEmptyMetric(Metric):
     name = "nan_when_empty"
     requires_ground_truth = False
 
@@ -37,15 +34,15 @@ class _NaNWhenEmptyMetric(BaseMetric):
         return 1.0 if prediction.objects else math.nan
 
 
-class _ListDataset(BaseDatasetLoader):
+class _ListDataset(DatasetLoader):
     def __init__(self, samples: list[SceneSample]) -> None:
         self._samples = samples
 
-    def samples(self) -> Iterator[SceneSample]:
+    def __iter__(self) -> Iterator[SceneSample]:
         return iter(self._samples)
 
 
-class _PerSampleEstimator(BaseSceneEstimator):
+class _PerSampleEstimator(PredictionSource):
     def __init__(self, outputs: dict[str, SceneOutput]) -> None:
         self._outputs = outputs
 
@@ -53,7 +50,7 @@ class _PerSampleEstimator(BaseSceneEstimator):
         return self._outputs[sample.sample_id]
 
 
-class _FixedEstimator(BaseSceneEstimator):
+class _FixedEstimator(PredictionSource):
     def __init__(self, output: SceneOutput) -> None:
         self._output = output
 
@@ -82,8 +79,8 @@ def test_duplicate_metric_names_are_rejected(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="Metric names must be unique"):
         Evaluator(
             _config(tmp_path),
-            _FixedEstimator(SceneOutput(layout=None)),
             _ListDataset([]),
+            _FixedEstimator(SceneOutput(layout=None)),
             metrics,
         )
 
@@ -100,8 +97,8 @@ def test_evaluator_skips_metrics_without_ground_truth(tmp_path: Path) -> None:
 
     result = Evaluator(
         _config(tmp_path),
-        _FixedEstimator(prediction),
         _ListDataset([sample]),
+        _FixedEstimator(prediction),
         [LayoutIoU3D(), CollisionRate()],  # ty: ignore[missing-argument]
     ).run()
 
@@ -121,8 +118,8 @@ def test_a_sample_id_with_folders_gets_its_prediction_copy(tmp_path: Path) -> No
 
     Evaluator(
         _config(tmp_path),
-        _FixedEstimator(prediction),
         _ListDataset([sample]),
+        _FixedEstimator(prediction),
         [CollisionRate()],
     ).run()
 
@@ -147,8 +144,8 @@ def test_evaluator_excludes_nan_from_aggregation(tmp_path: Path) -> None:
     ]
     result = Evaluator(
         _config(tmp_path),
-        _PerSampleEstimator({"s1": with_object, "s2": empty}),
         _ListDataset(samples),
+        _PerSampleEstimator({"s1": with_object, "s2": empty}),
         [_NaNWhenEmptyMetric()],
     ).run()
 
@@ -169,13 +166,13 @@ def test_dataset_map_perfect_predictions() -> None:
 
 
 def test_aggregate_has_bootstrap_ci() -> None:
-    aggregate = _aggregate([0.5, 0.5, 0.5, 0.5], seed=42)
-    assert aggregate["count"] == 4
-    assert aggregate["mean"] == pytest.approx(0.5)
-    assert aggregate["ci95_low"] == pytest.approx(0.5)
-    assert aggregate["ci95_high"] == pytest.approx(0.5)
+    summary = aggregate([0.5, 0.5, 0.5, 0.5], seed=42)
+    assert summary["count"] == 4
+    assert summary["mean"] == pytest.approx(0.5)
+    assert summary["ci95_low"] == pytest.approx(0.5)
+    assert summary["ci95_high"] == pytest.approx(0.5)
 
 
 def test_aggregate_single_value() -> None:
-    aggregate = _aggregate([0.7], seed=1)
-    assert aggregate["ci95_low"] == aggregate["ci95_high"]
+    summary = aggregate([0.7], seed=1)
+    assert summary["ci95_low"] == summary["ci95_high"]

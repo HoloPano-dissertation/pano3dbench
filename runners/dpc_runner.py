@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import _common as rc  # noqa: E402
+import runner_protocol as protocol  # noqa: E402
+import scene_payload as payload  # noqa: E402
 
 
 def camera_position(data) -> list:
@@ -51,7 +52,7 @@ def convert_data_pkl(data) -> dict:
     if isinstance(layout, dict) and layout.get("manhattan_world") is not None:
         layout_corners = [[float(value) - offset for value, offset in zip(point, origin)]
                           for point in layout["manhattan_world"]]
-    return rc.scene_from_oriented_objects(objects, layout_corners=layout_corners)
+    return payload.scene_from_oriented_objects(objects, layout_corners=layout_corners)
 
 
 def dpc_scene_name(sample_id: str) -> str:
@@ -193,32 +194,12 @@ def main() -> int:
     )
     args, _unknown = parser.parse_known_args()
 
-    requests = rc.read_requests(args.request)
-    if len(requests) == 1 and args.data_pkl:
-        scene = _convert_one(requests[0], args, args.data_pkl)
-        rc.write_output(
-            args.output,
-            layout=scene["layout"],
-            objects=scene["objects"],
-            relations=scene["relations"],
-            metadata=scene["metadata"],
-        )
-        return 0
-
-    rc.log(f"[dpc_runner] {len(requests)} sample(s), model={args.model}, root={args.pred_root}")
-    outputs = [_convert_one(request, args) for request in requests]
-
-    if len(requests) == 1:
-        scene = outputs[0]
-        rc.write_output(
-            args.output,
-            layout=scene["layout"],
-            objects=scene["objects"],
-            relations=scene["relations"],
-            metadata=scene["metadata"],
-        )
-        return 0
-    rc.write_outputs(args.output, outputs)
+    requests = protocol.read_requests(args.request)
+    data_pkl = args.data_pkl if len(requests) == 1 else None
+    if not data_pkl:
+        protocol.log(f"[dpc_runner] {len(requests)} sample(s), model={args.model}, root={args.pred_root}")
+    scenes = [_convert_one(request, args, data_pkl) for request in requests]
+    protocol.write_scenes(args.output, scenes)
     return 0
 
 

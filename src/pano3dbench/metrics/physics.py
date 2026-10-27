@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from pano3dbench.domain import SceneOutput
-from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.metrics.base import METRICS, Metric
+from pano3dbench.scene import SceneOutput
 
 
-@BaseMetric.registry.register("collision_rate")
-class CollisionRate(BaseMetric):
+@METRICS.register("collision_rate")
+class CollisionRate(Metric):
     name = "collision_rate"
     requires_ground_truth = False
 
@@ -34,8 +34,8 @@ class CollisionRate(BaseMetric):
         return collision_count / pair_count if pair_count else 0.0
 
 
-@BaseMetric.registry.register("layout_violation_rate")
-class LayoutViolationRate(BaseMetric):
+@METRICS.register("layout_violation_rate")
+class LayoutViolationRate(Metric):
     name = "layout_violation_rate"
     requires_ground_truth = False
 
@@ -68,8 +68,8 @@ class LayoutViolationRate(BaseMetric):
         return violations / considered if considered else 0.0
 
 
-@BaseMetric.registry.register("layout_penetration")
-class LayoutPenetration(BaseMetric):
+@METRICS.register("layout_penetration")
+class LayoutPenetration(Metric):
     name = "layout_penetration"
     requires_ground_truth = False
 

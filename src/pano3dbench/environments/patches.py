@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 import re
 import subprocess
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 LOGGER = logging.getLogger("pano3dbench.environments")
 
@@ -29,7 +30,7 @@ def _target(patch: Mapping[str, Any], repo_dir: Path) -> Path:
 
 def _read_target(
     patch: Mapping[str, Any], repo_dir: Path
-) -> "tuple[Path, str] | None":
+) -> tuple[Path, str] | None:
     path = _target(patch, repo_dir)
     if not path.exists():
         LOGGER.warning("Patch target file not found: %s", path)

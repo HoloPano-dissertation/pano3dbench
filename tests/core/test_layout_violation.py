@@ -3,12 +3,8 @@ from typing import Union
 
 import pytest
 
-from pano3dbench.domain import (
-    BoundingBox3D,
-    OrientedBox3D,
-    SceneObject,
-    SceneOutput,
-)
+from pano3dbench.geometry.boxes import BoundingBox3D, OrientedBox3D
+from pano3dbench.scene import SceneObject, SceneOutput
 from pano3dbench.metrics import LayoutPenetration, LayoutViolationRate
 
 IDENTITY = (

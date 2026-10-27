@@ -37,15 +37,15 @@ export PANO3D_CLASSES=$(python -c "import json,sys;print(','.join(json.load(open
 
 Порядок и конфигурации — в [configs/front3d/dpc/README.md](../configs/front3d/dpc/README.md):
 
-| Порядок | Компонента    | Чем                                                   | Читает                    |
-|--------:|---------------|-------------------------------------------------------|---------------------------|
-|       1 | детектор      | `training/train_detector.py`                          | `coco/`                   |
-|       2 | HorizonNet    | `training/train_horizonnet.py`                        | `horizonnet/`             |
-|       3 | первая стадия | `configs/front3d/dpc/first_stage_front3d.yaml`        | `dpc_scenes/`             |
-|       4 | BEN           | `configs/front3d/dpc/bdb3d_estimation_front3d.yaml`   | `dpc_stage1/`             |
-|       5 | LDIF          | `configs/front3d/dpc/ldif_front3d.yaml`               | `objects/`                |
-|       6 | MGN           | `configs/front3d/dpc/mgnet_front3d.yaml`              | `objects/`                |
-|       7 | Scene-GCN     | `configs/front3d/dpc/relation_scene_gcn_front3d.yaml` | `dpc_stage1/`, `objects/` |
+| Порядок | Компонента    | Чем                                                            | Читает                    |
+|--------:|---------------|----------------------------------------------------------------|---------------------------|
+|       1 | детектор      | `training/train_detector.py`                                   | `coco/`                   |
+|       2 | HorizonNet    | `training/train_horizonnet.py`                                 | `horizonnet/`             |
+|       3 | первая стадия | `configs/front3d/dpc/training/first_stage_front3d.yaml`        | `dpc_scenes/`             |
+|       4 | BEN           | `configs/front3d/dpc/training/bdb3d_estimation_front3d.yaml`   | `dpc_stage1/`             |
+|       5 | LDIF          | `configs/front3d/dpc/training/ldif_front3d.yaml`               | `objects/`                |
+|       6 | MGN           | `configs/front3d/dpc/training/mgnet_front3d.yaml`              | `objects/`                |
+|       7 | Scene-GCN     | `configs/front3d/dpc/training/relation_scene_gcn_front3d.yaml` | `dpc_stage1/`, `objects/` |
 
 Детектор и HorizonNet — [training/README.md](../training/README.md). Остальное обучается
 кодом DeepPanoContext: `python main.py <конфигурация> --mode train`.
@@ -55,7 +55,7 @@ export PANO3D_CLASSES=$(python -c "import json,sys;print(','.join(json.load(open
 BEN со Scene-GCN учатся уже на этих детекциях, а не на эталонных рамках:
 
 ```bash
-python main.py $TBX/configs/front3d/dpc/first_stage_front3d.yaml --mode test
+python main.py $TBX/configs/front3d/dpc/training/first_stage_front3d.yaml --mode test
 python $TBX/scripts/front3d/eval/index_stage1.py $EXP $EXP/dpc_stage1
 ```
 
@@ -74,19 +74,19 @@ BEN обучается с нуля: веса авторов рассчитаны
 перебирает несколько сотен пакетов и сразу показывает, если в каком-то пакете пропали предметы:
 
 ```bash
-python $TBX/scripts/dpc/dpc_loader_probe.py $TBX/configs/front3d/dpc/bdb3d_estimation_front3d.yaml --steps 300
+python $TBX/scripts/dpc/dpc_loader_probe.py $TBX/configs/front3d/dpc/training/bdb3d_estimation_front3d.yaml --steps 300
 ```
 
 ## 2. Вывод на тестовой части
 
 Из обученных компонент собираются четыре конфигурации:
 
-| Конфигурация DPC                                  | Метод                                | Папка вывода                 |
-|---------------------------------------------------|--------------------------------------|------------------------------|
-| `configs/front3d/dpc/pano3d_front3d.yaml`         | DPC, 100 шагов оптимизации отношений | `out/pano3d_front3d`         |
-| `configs/front3d/dpc/pano3d_front3d_s20.yaml`     | DPC, 20 шагов                        | `out/pano3d_front3d_s20`     |
-| `configs/front3d/dpc/pano3d_front3d_im3d.yaml`    | Im3D-Pano: без Scene-GCN, LDIF       | `out/pano3d_front3d_im3d`    |
-| `configs/front3d/dpc/pano3d_front3d_total3d.yaml` | Total3D-Pano: без Scene-GCN, MGN     | `out/pano3d_front3d_total3d` |
+| Конфигурация DPC                                            | Метод                                | Папка вывода                 |
+|-------------------------------------------------------------|--------------------------------------|------------------------------|
+| `configs/front3d/dpc/inference/pano3d_front3d.yaml`         | DPC, 100 шагов оптимизации отношений | `out/pano3d_front3d`         |
+| `configs/front3d/dpc/inference/pano3d_front3d_s20.yaml`     | DPC, 20 шагов                        | `out/pano3d_front3d_s20`     |
+| `configs/front3d/dpc/inference/pano3d_front3d_im3d.yaml`    | Im3D-Pano: без Scene-GCN, LDIF       | `out/pano3d_front3d_im3d`    |
+| `configs/front3d/dpc/inference/pano3d_front3d_total3d.yaml` | Total3D-Pano: без Scene-GCN, MGN     | `out/pano3d_front3d_total3d` |
 
 Во всех четырёх первый вес — Scene-GCN: в нём же лежат замороженные BEN и LDIF, с которыми
 он учился. Im3D-Pano получает тот же LDIF третьим весом, Total3D-Pano — MGN. Детектор
@@ -100,10 +100,10 @@ python $TBX/scripts/dpc/dpc_loader_probe.py $TBX/configs/front3d/dpc/bdb3d_estim
    видов (5707 на нашем наборе, 21 вид без предметов исключён).
 2. Вывод каждой конфигурации:
    ```bash
-   python main.py $TBX/configs/front3d/dpc/pano3d_front3d.yaml --mode qtest --model.scene_gcn.relation_adjust True
-   python main.py $TBX/configs/front3d/dpc/pano3d_front3d_s20.yaml --mode qtest --model.scene_gcn.relation_adjust True
-   python main.py $TBX/configs/front3d/dpc/pano3d_front3d_im3d.yaml --mode qtest
-   python main.py $TBX/configs/front3d/dpc/pano3d_front3d_total3d.yaml --mode qtest
+   python main.py $TBX/configs/front3d/dpc/inference/pano3d_front3d.yaml --mode qtest --model.scene_gcn.relation_adjust True
+   python main.py $TBX/configs/front3d/dpc/inference/pano3d_front3d_s20.yaml --mode qtest --model.scene_gcn.relation_adjust True
+   python main.py $TBX/configs/front3d/dpc/inference/pano3d_front3d_im3d.yaml --mode qtest
+   python main.py $TBX/configs/front3d/dpc/inference/pano3d_front3d_total3d.yaml --mode qtest
    ```
    Предсказания пишутся в `out/<папка>/<запуск>/visualization/<дом>/<комната>__<вид>/data.pkl`.
    Долгий вывод можно разбить на части, передав свой список видов: `--data.split <файл>.json`.
@@ -154,8 +154,8 @@ cp $EXP/eval/shape500/test_split_shape500.json $EXP/dpc_scenes/
 Вывод с выгрузкой сеток (`--mode test`, сетки пишет правка `DPC_PATCH_EXPORT_OBJ_MESH`):
 
 ```bash
-python main.py $TBX/configs/front3d/dpc/shape500_im3d.yaml --mode test
-python main.py $TBX/configs/front3d/dpc/shape500_total3d.yaml --mode test
+python main.py $TBX/configs/front3d/dpc/inference/shape500_im3d.yaml --mode test
+python main.py $TBX/configs/front3d/dpc/inference/shape500_total3d.yaml --mode test
 python $TBX/scripts/dpc/dpc_batch_convert.py $EXP/eval/shape500/manifest_test.jsonl $EXP/eval/shape500/pred_im3d \
     --repo $DPC --pred-root out/shape500_im3d --obj-mesh-sibling obj_mesh
 pano3dbench run --config configs/front3d/runs/shape_im3d_rescore.yaml

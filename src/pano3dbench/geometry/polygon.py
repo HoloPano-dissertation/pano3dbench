@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 Point2D = tuple[float, float]
 
@@ -41,7 +41,6 @@ def polygon_area(polygon: Sequence[Point2D]) -> float:
 def line_intersection(
     p1: Point2D, p2: Point2D, a: Point2D, b: Point2D
 ) -> Point2D:
-    """Intersection of segment p1->p2 with the line through a,b."""
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = a

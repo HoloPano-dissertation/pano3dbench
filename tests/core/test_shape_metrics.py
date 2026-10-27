@@ -8,17 +8,16 @@ from typing import Any, Optional
 import pytest
 from typing_extensions import TypeAlias
 
-from pano3dbench.domain import BoundingBox3D, SceneObject, SceneOutput
-from pano3dbench.metrics.base import BaseMetric
-from pano3dbench.metrics.shape import (
-    MeshChamfer,
-    MeshFScore,
-    _build_kd,
-    _nearest_sq,
+from pano3dbench.geometry.boxes import BoundingBox3D
+from pano3dbench.scene import SceneObject, SceneOutput
+from pano3dbench.metrics.base import METRICS
+from pano3dbench.file_formats.point_files import write_f32_points
+from pano3dbench.geometry.point_cloud import (
+    build_kd_tree,
     chamfer_and_fscore,
-    load_shape_points,
-    write_f32_points,
+    nearest_squared_distance,
 )
+from pano3dbench.metrics.shape import MeshChamfer, MeshFScore, load_shape_points
 
 ORIGIN = (0.0, 0.0, 0.0)
 
@@ -60,18 +59,18 @@ def test_kdtree_matches_brute_force() -> None:
     cloud = [
         (rng.uniform(-5, 5), rng.uniform(-5, 5), rng.uniform(-5, 5)) for _ in range(200)
     ]
-    tree = _build_kd(list(cloud))
+    tree = build_kd_tree(list(cloud))
     for _ in range(80):
         query = (rng.uniform(-6, 6), rng.uniform(-6, 6), rng.uniform(-6, 6))
-        assert _nearest_sq(tree, query) == pytest.approx(
+        assert nearest_squared_distance(tree, query) == pytest.approx(
             _nearest_sq_brute(cloud, query), abs=1e-10
         )
 
 
 def test_kdtree_finds_exact_member() -> None:
     cloud = [ORIGIN, (1.0, 2.0, 3.0), (-4.0, 5.0, 6.0)]
-    tree = _build_kd(list(cloud))
-    assert _nearest_sq(tree, (1.0, 2.0, 3.0)) == 0.0
+    tree = build_kd_tree(list(cloud))
+    assert nearest_squared_distance(tree, (1.0, 2.0, 3.0)) == 0.0
 
 
 def test_identical_clouds_are_perfect() -> None:
@@ -196,8 +195,8 @@ def test_sampling_is_deterministic_with_seed(tmp_path: Path) -> None:
 
 
 def test_registered_in_registry() -> None:
-    assert isinstance(BaseMetric.create("mesh_chamfer"), MeshChamfer)  # ty: ignore[invalid-argument-type]
-    assert isinstance(BaseMetric.create("mesh_fscore"), MeshFScore)  # ty: ignore[invalid-argument-type]
+    assert isinstance(METRICS.create("mesh_chamfer"), MeshChamfer)  # ty: ignore[invalid-argument-type]
+    assert isinstance(METRICS.create("mesh_fscore"), MeshFScore)  # ty: ignore[invalid-argument-type]
 
 
 def test_perfect_shape_is_zero() -> None:

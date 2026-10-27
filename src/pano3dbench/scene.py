@@ -1,27 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
-from pano3dbench.boxes import BoundingBox3D, OrientedBox3D, parse_box
-
-__all__ = [
-    "BoundingBox3D",
-    "OrientedBox3D",
-    "SceneObject",
-    "SceneOutput",
-    "SceneRelation",
-    "SceneSample",
-    "parse_box",
-]
+from pano3dbench.geometry.boxes import BoundingBox3D, OrientedBox3D, parse_box
 
 
 @dataclass(frozen=True)
 class SceneObject:
     object_id: str
     label: str
-    bbox: "BoundingBox3D | OrientedBox3D"
+    bbox: BoundingBox3D | OrientedBox3D
     score: float = 1.0
     attributes: Mapping[str, Any] = field(default_factory=dict)
 
@@ -72,7 +63,7 @@ class SceneRelation:
 
 @dataclass(frozen=True)
 class SceneOutput:
-    layout: "BoundingBox3D | OrientedBox3D | None"
+    layout: BoundingBox3D | OrientedBox3D | None
     objects: tuple[SceneObject, ...] = ()
     relations: tuple[SceneRelation, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)

@@ -5,7 +5,8 @@ import pytest
 import yaml
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs" / "front3d" / "dpc"
-CONFIGS = sorted(CONFIG_DIR.glob("*.yaml"))
+CONFIGS = sorted(CONFIG_DIR.glob("*/*.yaml"))
+PATHS = {path.name: path for path in CONFIGS}
 TRAINING = {
     "first_stage_front3d.yaml",
     "bdb3d_estimation_front3d.yaml",
@@ -34,6 +35,11 @@ def test_every_component_has_a_configuration() -> None:
     assert {path.name for path in CONFIGS} == TRAINING | INFERENCE
 
 
+def test_training_and_inference_configs_live_apart() -> None:
+    assert {path.name for path in (CONFIG_DIR / "training").glob("*.yaml")} == TRAINING
+    assert {path.name for path in (CONFIG_DIR / "inference").glob("*.yaml")} == INFERENCE
+
+
 @pytest.mark.parametrize("name", sorted(TRAINING | INFERENCE))
 def test_no_path_still_points_at_igibson_data(
     configs: dict[str, Any], name: str
@@ -48,7 +54,7 @@ def test_no_path_still_points_at_igibson_data(
 
 @pytest.mark.parametrize("name", sorted(TRAINING | INFERENCE))
 def test_paths_are_placeholders(name: str) -> None:
-    text = (CONFIG_DIR / name).read_text(encoding="utf-8")
+    text = PATHS[name].read_text(encoding="utf-8")
     for line in text.splitlines():
         if "'/" in line or ": /" in line:
             assert "/PATH/TO/" in line, f"{name}: {line.strip()}"

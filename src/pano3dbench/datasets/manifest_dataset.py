@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
-from pano3dbench.datasets.base import BaseDatasetLoader
-from pano3dbench.domain import SceneOutput, SceneSample
+from pano3dbench.datasets.base import DATASET_LOADERS, DatasetLoader
+from pano3dbench.scene import SceneOutput, SceneSample
 
 
-@BaseDatasetLoader.registry.register("manifest")
-class ManifestDatasetLoader(BaseDatasetLoader):
-    def __init__(self, parameters: dict[str, Any]) -> None:
-        try:
-            self.manifest_path = Path(parameters["manifest"]).resolve()
-        except KeyError as error:
-            raise ValueError("ManifestDatasetLoader requires 'manifest'") from error
+@DATASET_LOADERS.register("manifest")
+class ManifestDatasetLoader(DatasetLoader):
+    def __init__(self, manifest: str | Path) -> None:
+        self.manifest_path = Path(manifest).resolve()
 
     def _resolve(self, value: str) -> Path:
         path = Path(value).expanduser()
@@ -33,7 +30,7 @@ class ManifestDatasetLoader(BaseDatasetLoader):
         with ground_truth_path.open(encoding="utf-8") as ground_truth_file:
             return SceneOutput.from_dict(json.load(ground_truth_file))
 
-    def samples(self) -> Iterator[SceneSample]:
+    def __iter__(self) -> Iterator[SceneSample]:
         with self.manifest_path.open(encoding="utf-8") as manifest:
             for line_number, line in enumerate(manifest, start=1):
                 if not line.strip():
@@ -57,4 +54,5 @@ class ManifestDatasetLoader(BaseDatasetLoader):
                     metadata=dict(record.get("metadata", {})),
                 )
 
-BaseDatasetLoader.registry.alias("manifest", "igibson")
+
+DATASET_LOADERS.alias("manifest", "igibson")

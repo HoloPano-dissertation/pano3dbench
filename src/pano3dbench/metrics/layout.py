@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from pano3dbench.domain import SceneOutput
-from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.metrics.base import METRICS, Metric
+from pano3dbench.scene import SceneOutput
 
 
-@BaseMetric.registry.register("layout_iou_3d")
-class LayoutIoU3D(BaseMetric):
+@METRICS.register("layout_iou_3d")
+class LayoutIoU3D(Metric):
     name = "layout_iou_3d"
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:

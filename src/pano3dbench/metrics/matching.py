@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
-from pano3dbench.domain import SceneObject
+from pano3dbench.scene import SceneObject
 
 Match = tuple[SceneObject, "SceneObject | None"]
 

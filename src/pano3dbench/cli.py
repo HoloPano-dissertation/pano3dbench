@@ -3,12 +3,19 @@ from __future__ import annotations
 import argparse
 import logging
 from collections.abc import Sequence
+from pathlib import Path
 
 from pano3dbench.config import ExperimentConfig
-from pano3dbench.datasets import BaseDatasetLoader
-from pano3dbench.evaluator import Evaluator
-from pano3dbench.metrics import BaseMetric
-from pano3dbench.models import BaseSceneEstimator
+from pano3dbench.environments import (
+    ENVIRONMENT_MANAGERS,
+    build_plan,
+    doctor_report,
+    generate_submit_script,
+    load_environment_spec,
+    render_plan,
+    verify_checkpoints,
+)
+from pano3dbench.experiment import run_experiment
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -87,35 +94,12 @@ def _environment_source(args: argparse.Namespace) -> str | dict:
 
 
 def _run(config_path: str) -> int:
-    config = ExperimentConfig.fromfile(config_path)
-    model_parameters = dict(config.model.parameters)
-    model_parameters.setdefault("seed", config.seed)
-    estimator = BaseSceneEstimator.create(config.model.type, model_parameters)
-    dataset = BaseDatasetLoader.create(
-        config.dataset.type, dict(config.dataset.parameters)
-    )
-    metrics = [
-        BaseMetric.create(metric.type, dict(metric.parameters))
-        for metric in config.metrics
-    ]
-    result = Evaluator(config, estimator, dataset, metrics).run()
+    result = run_experiment(config_path)
     print(f"Evaluated {result.scene_count} scene(s). Artifacts: {result.output_dir}")
     return 0
 
 
 def _env(args: argparse.Namespace) -> int:
-    from pathlib import Path
-
-    from pano3dbench.environments import (
-        BaseEnvironmentManager,
-        build_plan,
-        doctor_report,
-        generate_submit_script,
-        load_environment_spec,
-        render_plan,
-        verify_checkpoints,
-    )
-
     if args.env_command == "doctor":
         print(doctor_report())
         return 0
@@ -139,7 +123,7 @@ def _env(args: argparse.Namespace) -> int:
 
     if args.env_command == "prepare":
         spec = load_environment_spec(_environment_source(args))
-        manager = BaseEnvironmentManager.create(spec.backend)
+        manager = ENVIRONMENT_MANAGERS.create(spec.backend)
 
         if args.dry_run:
             print(render_plan(spec, build_plan(spec, manager)))

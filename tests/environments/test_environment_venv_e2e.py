@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from pano3dbench.domain import SceneSample
+from pano3dbench.scene import SceneSample
 from pano3dbench.environments import load_environment_spec
 from pano3dbench.environments.venv import VenvEnvironmentManager
-from pano3dbench.models.subprocess import SubprocessSceneEstimator
+from pano3dbench.predictions import RunnerPredictionSource
 
 
 def test_prepare_and_run_echo_environment(tmp_path: Path, repo_root: Path) -> None:
@@ -23,7 +23,7 @@ def test_prepare_and_run_echo_environment(tmp_path: Path, repo_root: Path) -> No
     manager.prepare(spec)
     assert manager.is_prepared(spec)
 
-    estimator = SubprocessSceneEstimator({"environment": spec})
+    estimator = RunnerPredictionSource(environment=spec)
     provenance = estimator.provenance()
     assert provenance["environment"] == "echo"
     assert provenance["backend"] == "venv"

@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 
-def git_revision(repo_dir: "Path | None" = None) -> "str | None":
+def git_revision(repo_dir: Path | None = None) -> str | None:
     command = ["git"]
     if repo_dir is not None:
         command += ["-C", str(repo_dir)]

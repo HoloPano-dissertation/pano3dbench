@@ -1,4 +1,5 @@
-from pano3dbench.domain import BoundingBox3D, SceneOutput
+from pano3dbench.geometry.boxes import BoundingBox3D
+from pano3dbench.scene import SceneOutput
 
 
 def test_scene_output_round_trip() -> None:

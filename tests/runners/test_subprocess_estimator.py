@@ -2,11 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from pano3dbench.domain import BoundingBox3D, SceneSample
-from pano3dbench.models.subprocess import (
-    SubprocessSceneEstimator,
-    _usable_wrapper,
-)
+from pano3dbench.geometry.boxes import BoundingBox3D
+from pano3dbench.scene import SceneSample
+from pano3dbench.predictions import RunnerPredictionSource
+from pano3dbench.predictions.runner_process import usable_wrapper
 
 
 @pytest.mark.parametrize(
@@ -19,13 +18,13 @@ from pano3dbench.models.subprocess import (
         pytest.param([], (), id="empty"),
     ],
 )
-def test_usable_wrapper(wrapper: list[str], expected: tuple[str, ...]) -> None:
-    assert _usable_wrapper(wrapper) == expected
+def testusable_wrapper(wrapper: list[str], expected: tuple[str, ...]) -> None:
+    assert usable_wrapper(wrapper) == expected
 
 
 def test_json_protocol(fake_command: list[str]) -> None:
-    estimator = SubprocessSceneEstimator(
-        {"command": fake_command, "environment_name": "test-environment"}
+    estimator = RunnerPredictionSource(
+        command=fake_command, environment_name="test-environment"
     )
     sample = SceneSample(sample_id="scene-001", input_path=Path(__file__))
 

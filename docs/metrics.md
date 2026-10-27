@@ -156,20 +156,20 @@ metrics:
 
 ## Свой показатель
 
-1. Наследовать `BaseMetric` (`src/pano3dbench/metrics/base.py`) и реализовать
+1. Наследовать `Metric` (`src/pano3dbench/metrics/base.py`) и реализовать
    `compute(prediction, ground_truth) -> float`. Для показателя по набору —
    `dataset_level = True` и `compute_dataset(predictions, ground_truths)`. Если эталон не
    нужен — `requires_ground_truth = False`.
-2. Зарегистрировать декоратором `@BaseMetric.registry.register("my_metric")`.
+2. Зарегистрировать декоратором `@METRICS.register("my_metric")`.
 3. Импортировать модуль в `metrics/__init__.py`, чтобы регистрация выполнилась. После
    этого показатель доступен в конфигурации как `type: my_metric`.
 
 ```python
-from pano3dbench.metrics.base import BaseMetric
+from pano3dbench.metrics.base import METRICS, Metric
 
 
-@BaseMetric.registry.register("bbox_count_ratio")
-class BBoxCountRatio(BaseMetric):
+@METRICS.register("bbox_count_ratio")
+class BBoxCountRatio(Metric):
     name = "bbox_count_ratio"
     requires_ground_truth = True
 

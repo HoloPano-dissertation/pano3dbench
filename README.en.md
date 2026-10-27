@@ -30,10 +30,10 @@ PYTHONPATH=src python -m pano3dbench run --config configs/demo/smoke.json
 
 ## Reproducing the paper
 
-| Set | Document | What is reproduced |
-|---|---|---|
-| iGibson | [docs/igibson.md](docs/igibson.md) | five method configurations, two 11-class control rows, the LDIF vs MGN shape comparison |
-| 3D-FRONT | [docs/front3d.md](docs/front3d.md) | training the components on our set and evaluating on its test part |
+| Set      | Document                           | What is reproduced                                                                      |
+|----------|------------------------------------|-----------------------------------------------------------------------------------------|
+| iGibson  | [docs/igibson.md](docs/igibson.md) | five method configurations, two 11-class control rows, the LDIF vs MGN shape comparison |
+| 3D-FRONT | [docs/front3d.md](docs/front3d.md) | training the components on our set and evaluating on its test part                      |
 
 The documents in `docs/` are in Russian.
 
@@ -87,7 +87,8 @@ pano3dbench/
 │       ├── front3d_to_igibson.json  mapping of 3D-FRONT classes to the iGibson vocabulary
 │       ├── dpc/             DPC configs on 3D-FRONT: component training and inference
 │       └── runs/            paper rows from saved predictions
-├── docs/                    documentation (Russian); configs/README.md and scripts/README.md list every config and script
+├── docs/                    documentation (Russian); configs/README.md and scripts/README.md list every config and script,
+│                            src/pano3dbench/README.md and the README of each core folder list every source file
 ├── runners/                 model runners for isolated environments
 ├── scripts/
 │   ├── dpc/                 DPC prediction conversion, DPC code patches

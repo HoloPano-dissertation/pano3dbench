@@ -8,7 +8,9 @@ from typing import Any
 
 import yaml
 
-from pano3dbench.config import ConfigError
+
+class ConfigError(Exception):
+    pass
 
 
 def read_mapping_file(path: Path, *, what: str) -> dict[str, Any]:

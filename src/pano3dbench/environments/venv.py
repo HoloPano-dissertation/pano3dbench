@@ -7,7 +7,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from pano3dbench.environments.base import BaseEnvironmentManager, EnvHandle
+from pano3dbench.environments.base import ENVIRONMENT_MANAGERS, EnvHandle, EnvironmentManager
 from pano3dbench.environments.patches import apply_patches
 from pano3dbench.environments.spec import EnvironmentSpec
 from pano3dbench.environments.steps import (
@@ -19,10 +19,8 @@ from pano3dbench.environments.steps import (
 LOGGER = logging.getLogger("pano3dbench.environments")
 
 
-@BaseEnvironmentManager.registry.register("venv")
-class VenvEnvironmentManager(BaseEnvironmentManager):
-    """venv backend: lightweight models and local development."""
-
+@ENVIRONMENT_MANAGERS.register("venv")
+class VenvEnvironmentManager(EnvironmentManager):
     def _venv_dir(self, spec: EnvironmentSpec) -> Path:
         return spec.workspace / "venvs" / spec.name
 
@@ -32,7 +30,7 @@ class VenvEnvironmentManager(BaseEnvironmentManager):
             return directory / "Scripts" / "python.exe"
         return directory / "bin" / "python"
 
-    def _env_exists(self, spec: EnvironmentSpec) -> bool:
+    def environment_exists(self, spec: EnvironmentSpec) -> bool:
         return self._venv_python(spec).exists()
 
     def _base_python(self, spec: EnvironmentSpec) -> str:
@@ -56,7 +54,7 @@ class VenvEnvironmentManager(BaseEnvironmentManager):
     def prepare(self, spec: EnvironmentSpec) -> EnvHandle:
         venv_dir = self._venv_dir(spec)
         venv_dir.parent.mkdir(parents=True, exist_ok=True)
-        if not self._env_exists(spec):
+        if not self.environment_exists(spec):
             run_step([self._base_python(spec), "-m", "venv", venv_dir])
 
         python = str(self._venv_python(spec))

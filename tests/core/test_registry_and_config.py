@@ -5,8 +5,8 @@ import pytest
 import yaml
 
 from pano3dbench.config import ConfigError, ExperimentConfig
-from pano3dbench.datasets import BaseDatasetLoader, ManifestDatasetLoader
-from pano3dbench.models import BaseSceneEstimator, SubprocessSceneEstimator
+from pano3dbench.datasets import DATASET_LOADERS, ManifestDatasetLoader
+from pano3dbench.predictions import PREDICTION_SOURCES, RunnerPredictionSource
 from pano3dbench.registry import ComponentRegistry
 
 CONFIGS_DIR = Path(__file__).resolve().parents[2] / "configs"
@@ -32,14 +32,24 @@ def write_yaml(path: Path, payload: dict) -> Path:
 
 @pytest.mark.parametrize("name", ["manifest", "igibson"])
 def test_dataset_aliases_resolve_to_one_implementation(name: str) -> None:
-    loader = BaseDatasetLoader.create(name, {"manifest": str(Path(__file__))})
+    loader = DATASET_LOADERS.create(name, {"manifest": str(Path(__file__))})
     assert isinstance(loader, ManifestDatasetLoader)  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("name", ["subprocess", "dpc"])
 def test_model_aliases_resolve_to_one_implementation(name: str) -> None:
-    estimator = BaseSceneEstimator.create(name, {"command": ["true"]})
-    assert isinstance(estimator, SubprocessSceneEstimator)  # ty: ignore[invalid-argument-type]
+    estimator = PREDICTION_SOURCES.create(name, {"command": ["true"]})
+    assert isinstance(estimator, RunnerPredictionSource)  # ty: ignore[invalid-argument-type]
+
+
+def test_unknown_component_parameter_is_reported() -> None:
+    with pytest.raises(ValueError, match="Invalid parameters for dataset loader"):
+        DATASET_LOADERS.create("manifest", {"manifest": "m.jsonl", "manifets": "x"})
+
+
+def test_missing_component_parameter_is_reported() -> None:
+    with pytest.raises(ValueError, match="missing a required argument: 'manifest'"):
+        DATASET_LOADERS.create("manifest", {})
 
 
 def test_alias_requires_a_registered_target() -> None:

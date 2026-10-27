@@ -3,7 +3,8 @@ import math
 import pytest
 from typing_extensions import TypeAlias
 
-from pano3dbench.domain import BoundingBox3D, SceneObject, SceneOutput
+from pano3dbench.geometry.boxes import BoundingBox3D
+from pano3dbench.scene import SceneObject, SceneOutput
 from pano3dbench.metrics import (
     ObjectDetectionMAP,
     ObjectDetectionMAPDataset,
