@@ -26,17 +26,17 @@ cat artifacts/echo/report.md
 
 ## Команды
 
-| Команда | Назначение |
-|---|---|
-| `pano3dbench run --config <cfg>` | один эксперимент |
-| `pano3dbench env prepare --env <spec>` | собрать окружение модели по спецификации |
-| `pano3dbench env prepare --config <cfg>` | то же, окружение берётся из конфигурации эксперимента |
-| `... --force` | собрать окружение заново |
-| `... --dry-run` | показать, что будет собрано и что требует сети, ничего не меняя |
-| `... --adopt` | признать готовым окружение, собранное иначе |
-| `... --verify` | заново проверить sha256 весов на диске |
-| `pano3dbench env doctor` | бэкенды, GPU и настройки сборки |
-| `pano3dbench env submit-script --env <spec>` | скрипт sbatch или bash для кластера |
+| Команда                                      | Назначение                                                      |
+|----------------------------------------------|-----------------------------------------------------------------|
+| `pano3dbench run --config <cfg>`             | один эксперимент                                                |
+| `pano3dbench env prepare --env <spec>`       | собрать окружение модели по спецификации                        |
+| `pano3dbench env prepare --config <cfg>`     | то же, окружение берётся из конфигурации эксперимента           |
+| `... --force`                                | собрать окружение заново                                        |
+| `... --dry-run`                              | показать, что будет собрано и что требует сети, ничего не меняя |
+| `... --adopt`                                | признать готовым окружение, собранное иначе                     |
+| `... --verify`                               | заново проверить sha256 весов на диске                          |
+| `pano3dbench env doctor`                     | бэкенды, GPU и настройки сборки                                 |
+| `pano3dbench env submit-script --env <spec>` | скрипт sbatch или bash для кластера                             |
 
 `env prepare` идемпотентна: повторный вызов с той же спецификацией окружение не пересобирает.
 
@@ -131,10 +131,10 @@ flowchart LR
 (`configs/environments/*.yaml`); `BaseEnvironmentManager` собирает и находит его через
 бэкенды:
 
-| Бэкенд | Назначение |
-|---|---|
+| Бэкенд  | Назначение                                                             |
+|---------|------------------------------------------------------------------------|
 | `conda` | основной — семейство DPC (старые PyTorch и CUDA, бинарные зависимости) |
-| `venv` | лёгкие модели и локальная разработка |
+| `venv`  | лёгкие модели и локальная разработка                                   |
 
 - `prepare(spec)` — идемпотентная сборка: клонировать репозиторий, применить правки
   (снять жёсткие версии в файле окружения, `git apply`), создать окружение, поставить
@@ -152,18 +152,18 @@ repo:
   url: https://github.com/chengzhag/DeepPanoContext.git
 env_file: environment.yaml
 patches:
-  - { file: environment.yaml, drop: ["mirrors.tuna"] }
+  - { file: environment.yaml, drop: [ "mirrors.tuna" ] }
 pip:
   - "detectron2 -f https://.../cu101/torch1.7/index.html"
-system: [xvfb, ninja-build]   # системные пакеты ставятся отдельно, нужны права
+system: [ xvfb, ninja-build ]   # системные пакеты ставятся отдельно, нужны права
 checkpoints:
   - url: "https://.../weights?download=1"
     dest: "dpc_pretrained.zip"
     unpack: true
 runner:
   entry: runners/dpc_runner.py
-  args: ["--config", "configs/pano3d_igibson.yaml"]
-  wrapper: ["xvfb-run", "-a"]
+  args: [ "--config", "configs/pano3d_igibson.yaml" ]
+  wrapper: [ "xvfb-run", "-a" ]
 ```
 
 Окружения хранятся в `.pano3dbench/` (вне git): `venvs/<имя>/`, `repos/<имя>/`
@@ -243,7 +243,11 @@ dataset:
 Загрузчик `manifest` читает JSONL, по строке на сцену:
 
 ```json
-{"sample_id": "scene-001", "input": "panorama.png", "ground_truth": "gt/scene-001.json"}
+{
+  "sample_id": "scene-001",
+  "input": "panorama.png",
+  "ground_truth": "gt/scene-001.json"
+}
 ```
 
 `input` — путь к панораме (относительно файла перечня); `ground_truth` — путь к эталону
@@ -253,15 +257,59 @@ dataset:
 
 ```json
 {
-  "layout": { "min_corner": [0,0,0], "max_corner": [4,3,5] },
+  "layout": {
+    "min_corner": [
+      0,
+      0,
+      0
+    ],
+    "max_corner": [
+      4,
+      3,
+      5
+    ]
+  },
   "objects": [
-    { "object_id": "chair-1", "label": "chair", "score": 0.96,
-      "bbox": { "center": [1.5,0.5,1.5], "size": [1,1,1],
-                "basis": [[1,0,0],[0,1,0],[0,0,1]] },
-      "attributes": {} }
+    {
+      "object_id": "chair-1",
+      "label": "chair",
+      "score": 0.96,
+      "bbox": {
+        "center": [
+          1.5,
+          0.5,
+          1.5
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "basis": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      },
+      "attributes": {}
+    }
   ],
   "relations": [],
-  "metadata": { "model": "dpc" }
+  "metadata": {
+    "model": "dpc"
+  }
 }
 ```
 
@@ -298,10 +346,10 @@ run.json                   конфигурация, время, ревизия 
   в конфигурации `model.type: fixture`, `prediction_dir: <папка>`. Удобно для отладки
   показателей и пересчёта.
 - **запуск модели:** два файла, ядро не меняется:
-  1. `configs/environments/<модель>.yaml` — спецификация окружения (бэкенд, репозиторий,
-     веса, раннер);
-  2. `runners/<модель>_runner.py` — вывод и перевод в `SceneOutput` по договору
-     [runners/README.md](../runners/README.md), с помощниками из `runners/_common.py`.
+    1. `configs/environments/<модель>.yaml` — спецификация окружения (бэкенд, репозиторий,
+       веса, раннер);
+    2. `runners/<модель>_runner.py` — вывод и перевод в `SceneOutput` по договору
+       [runners/README.md](../runners/README.md), с помощниками из `runners/_common.py`.
 
   Затем `env prepare --env configs/environments/<модель>.yaml` и обычный `run`.
   Минимальный пример — `echo` (`runners/echo_runner.py` + `configs/environments/echo.yaml`).

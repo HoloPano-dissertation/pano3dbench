@@ -37,15 +37,15 @@ export PANO3D_CLASSES=$(python -c "import json,sys;print(','.join(json.load(open
 
 Порядок и конфигурации — в [configs/front3d/dpc/README.md](../configs/front3d/dpc/README.md):
 
-| Порядок | Компонента     | Чем                                                   | Читает                     |
-|--------:|----------------|-------------------------------------------------------|----------------------------|
-|       1 | детектор       | `training/train_detector.py`                          | `coco/`                    |
-|       2 | HorizonNet     | `training/train_horizonnet.py`                        | `horizonnet/`              |
-|       3 | первая стадия  | `configs/front3d/dpc/first_stage_front3d.yaml`        | `dpc_scenes/`              |
-|       4 | BEN            | `configs/front3d/dpc/bdb3d_estimation_front3d.yaml`   | `dpc_stage1/`              |
-|       5 | LDIF           | `configs/front3d/dpc/ldif_front3d.yaml`               | `objects/`                 |
-|       6 | MGN            | `configs/front3d/dpc/mgnet_front3d.yaml`              | `objects/`                 |
-|       7 | Scene-GCN      | `configs/front3d/dpc/relation_scene_gcn_front3d.yaml` | `dpc_stage1/`, `objects/`  |
+| Порядок | Компонента    | Чем                                                   | Читает                    |
+|--------:|---------------|-------------------------------------------------------|---------------------------|
+|       1 | детектор      | `training/train_detector.py`                          | `coco/`                   |
+|       2 | HorizonNet    | `training/train_horizonnet.py`                        | `horizonnet/`             |
+|       3 | первая стадия | `configs/front3d/dpc/first_stage_front3d.yaml`        | `dpc_scenes/`             |
+|       4 | BEN           | `configs/front3d/dpc/bdb3d_estimation_front3d.yaml`   | `dpc_stage1/`             |
+|       5 | LDIF          | `configs/front3d/dpc/ldif_front3d.yaml`               | `objects/`                |
+|       6 | MGN           | `configs/front3d/dpc/mgnet_front3d.yaml`              | `objects/`                |
+|       7 | Scene-GCN     | `configs/front3d/dpc/relation_scene_gcn_front3d.yaml` | `dpc_stage1/`, `objects/` |
 
 Детектор и HorizonNet — [training/README.md](../training/README.md). Остальное обучается
 кодом DeepPanoContext: `python main.py <конфигурация> --mode train`.

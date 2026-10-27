@@ -16,12 +16,12 @@ scripts/front3d/
 
 ## Окружения
 
-| Скрипты | Что нужно |
-|---|---|
+| Скрипты                                                                                                                        | Что нужно                                                                                                              |
+|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
 | `export_crops.py`, `export_horizonnet.py`, `export_sdf.py`, `export_mgn_points.py`, `export_dpc.py`, `validate_dpc.py`, `qa/*` | установленный генератор (`pip install -e <клон front3d-pano>`) с его зависимостями; `export_sdf.py` ещё `scikit-image` |
-| `validate_horizonnet.py` | то же и корень `$DPC` в `PYTHONPATH` (читает цели загрузчиком HorizonNet) |
-| `export_dpc_scenes.py`, `complete_dpc_metadata.py`, `check_dpc_scenes.py`, `eval/make_test_split.py`, `eval/index_stage1.py` | окружение `Pano3D` и корень `$DPC` в `PYTHONPATH`: сцены пишутся и читаются кодом самого DPC |
-| `eval/make_shape500.py` | только стандартная библиотека Python |
+| `validate_horizonnet.py`                                                                                                       | то же и корень `$DPC` в `PYTHONPATH` (читает цели загрузчиком HorizonNet)                                              |
+| `export_dpc_scenes.py`, `complete_dpc_metadata.py`, `check_dpc_scenes.py`, `eval/make_test_split.py`, `eval/index_stage1.py`   | окружение `Pano3D` и корень `$DPC` в `PYTHONPATH`: сцены пишутся и читаются кодом самого DPC                           |
+| `eval/make_shape500.py`                                                                                                        | только стандартная библиотека Python                                                                                   |
 
 ## `adapters/` — по порядку
 
@@ -41,16 +41,16 @@ conda run -n Pano3D python $TBX/scripts/front3d/adapters/complete_dpc_metadata.p
 conda run -n Pano3D python $TBX/scripts/front3d/adapters/check_dpc_scenes.py $EXP $EXP/dpc_scenes
 ```
 
-| Скрипт | Что пишет | Для чего |
-|---|---|---|
-| `export_crops.py` | `objects/.../crop-<дом>__<комната>__<вид>.png`, `objects/<часть>.json` | вырезки предметов для BEN |
-| `export_horizonnet.py`, `validate_horizonnet.py` | `horizonnet/<часть>/` | обучение HorizonNet (`training/train_horizonnet.py`) |
-| `export_dpc.py`, `validate_dpc.py` | `dpc_dataset/` | подача изображений в DPC и соответствие имён видам |
-| `export_sdf.py` | в папке каждого предмета `objects/<класс>/<id>/` | цели LDIF |
-| `export_mgn_points.py` | там же | цели MGN, нужен результат `export_sdf.py` |
-| `export_dpc_scenes.py` | `dpc_scenes/` | сцены `data.pkl` для BEN, Scene-GCN и вывода; нужны цели HorizonNet |
-| `complete_dpc_metadata.py` | статистика размеров классов в `dpc_scenes/` | её требует загрузчик сцен DPC |
-| `check_dpc_scenes.py` | отчёт | сверка сцен с эталоном генератора |
+| Скрипт                                           | Что пишет                                                              | Для чего                                                            |
+|--------------------------------------------------|------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `export_crops.py`                                | `objects/.../crop-<дом>__<комната>__<вид>.png`, `objects/<часть>.json` | вырезки предметов для BEN                                           |
+| `export_horizonnet.py`, `validate_horizonnet.py` | `horizonnet/<часть>/`                                                  | обучение HorizonNet (`training/train_horizonnet.py`)                |
+| `export_dpc.py`, `validate_dpc.py`               | `dpc_dataset/`                                                         | подача изображений в DPC и соответствие имён видам                  |
+| `export_sdf.py`                                  | в папке каждого предмета `objects/<класс>/<id>/`                       | цели LDIF                                                           |
+| `export_mgn_points.py`                           | там же                                                                 | цели MGN, нужен результат `export_sdf.py`                           |
+| `export_dpc_scenes.py`                           | `dpc_scenes/`                                                          | сцены `data.pkl` для BEN, Scene-GCN и вывода; нужны цели HorizonNet |
+| `complete_dpc_metadata.py`                       | статистика размеров классов в `dpc_scenes/`                            | её требует загрузчик сцен DPC                                       |
+| `check_dpc_scenes.py`                            | отчёт                                                                  | сверка сцен с эталоном генератора                                   |
 
 `export_crops.py`, `export_sdf.py`, `export_mgn_points.py` и `export_dpc_scenes.py`
 шардируются (`--shard-index`, `--shard-count`). Вспомогательные модули: `layout_targets.py`
@@ -67,12 +67,12 @@ label_dense/<...>.npz              плотные цели
 label_cor/<...>.txt                углы в формате HorizonNet (только для контуров без дыр)
 ```
 
-| Ключ `npz` | Форма | Что |
-|---|---|---|
-| `boundary` | 2×1024 | широта (рад) границы потолок—стена и стена—пол в каждом столбце |
-| `corner` | 1×1024 | `0.96^(расстояние в пикселях до ближайшего видимого угла)` |
-| `ranges` | 1024 | расстояние по горизонтали от камеры до контура вдоль луча столбца |
-| `visible_corner_x` | K | столбцы видимых углов |
+| Ключ `npz`         | Форма  | Что                                                               |
+|--------------------|--------|-------------------------------------------------------------------|
+| `boundary`         | 2×1024 | широта (рад) границы потолок—стена и стена—пол в каждом столбце   |
+| `corner`           | 1×1024 | `0.96^(расстояние в пикселях до ближайшего видимого угла)`        |
+| `ranges`           | 1024   | расстояние по горизонтали от камеры до контура вдоль луча столбца |
+| `visible_corner_x` | K      | столбцы видимых углов                                             |
 
 Цели строятся лучами из камеры до рёбер очищенного контура, поэтому подходят для комнат
 любой формы, в том числе с дырами в плане.
@@ -90,13 +90,13 @@ label_cor/<...>.txt                углы в формате HorizonNet (тол
 
 **Цели LDIF и MGN** в папке каждого предмета:
 
-| Файл | Что |
-|---|---|
+| Файл                                   | Что                                                                  |
+|----------------------------------------|----------------------------------------------------------------------|
 | `nss_points.sdf`, `uniform_points.sdf` | по 100 000 точек у поверхности и равномерно, со знаковым расстоянием |
-| `coarse_grid.grd` | грубая сетка 32³ в формате GAPS |
-| `mesh_watertight.ply` | замкнутая сетка, построенная по полю расстояния |
-| `orig_to_gaps.txt` | матрица 4×4 перехода в нормированную систему LDIF |
-| `gt_3dpoints.mgn`, `densities.mgn` | 10 000 точек поверхности и их локальная плотность |
+| `coarse_grid.grd`                      | грубая сетка 32³ в формате GAPS                                      |
+| `mesh_watertight.ply`                  | замкнутая сетка, построенная по полю расстояния                      |
+| `orig_to_gaps.txt`                     | матрица 4×4 перехода в нормированную систему LDIF                    |
+| `gt_3dpoints.mgn`, `densities.mgn`     | 10 000 точек поверхности и их локальная плотность                    |
 
 Перед расчётом поля сетка умножается на 0.8, чтобы поместиться в куб ±0.7.
 
@@ -122,12 +122,12 @@ python $TBX/scripts/front3d/qa/review.py $EXP/validation/geometry \
 python $TBX/scripts/front3d/qa/extract_preview.py $EXP/outputs/<часть>/<дом>/<комната>/0.hdf5 <папка>
 ```
 
-| Скрипт | Что делает |
-|---|---|
-| `audit.py` (+ `quality.py`) | проверяет камеры, геометрию, яркость и долю валидной глубины, строит `review.html` с превью |
-| `review.py` | контактные листы: все отмеченные комнаты и фиксированная случайная выборка |
-| `extract_preview.py` | цвет, глубину, нормали и экземпляры одного HDF5 в PNG и формы массивов в `datasets.json` |
-| `check_annotations.py` | сверяет разметку комнаты с отрендеренной глубиной: границы потолка и пола HorizonNet, порядок углов, долю точек предмета внутри его рамки; рисует наложение по четырём видам и пишет `report.jsonl` |
+| Скрипт                      | Что делает                                                                                                                                                                                          |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `audit.py` (+ `quality.py`) | проверяет камеры, геометрию, яркость и долю валидной глубины, строит `review.html` с превью                                                                                                         |
+| `review.py`                 | контактные листы: все отмеченные комнаты и фиксированная случайная выборка                                                                                                                          |
+| `extract_preview.py`        | цвет, глубину, нормали и экземпляры одного HDF5 в PNG и формы массивов в `datasets.json`                                                                                                            |
+| `check_annotations.py`      | сверяет разметку комнаты с отрендеренной глубиной: границы потолка и пола HorizonNet, порядок углов, долю точек предмета внутри его рамки; рисует наложение по четырём видам и пишет `report.jsonl` |
 
 ```bash
 python $TBX/scripts/front3d/qa/check_annotations.py $EXP <папка отчёта> <дом>/<комната> [...]
@@ -138,11 +138,11 @@ python $TBX/scripts/front3d/qa/check_annotations.py $EXP <папка отчёт�
 
 ## `eval/` — списки видов
 
-| Скрипт | Что пишет | Когда |
-|---|---|---|
-| `index_stage1.py EXP STAGE1` | `STAGE1/train.json`, `STAGE1/test.json` (проверочная часть) | после первой стадии, перед обучением BEN и Scene-GCN |
-| `make_test_split.py EXP` | `dpc_scenes/test_split.json`, `eval/manifest_test.jsonl` | перед выводом на тестовой части |
-| `make_shape500.py EXP` | `eval/shape500/`: список 500 видов, эталон с `mesh_watertight.ply`, перечни | перед подсчётом формы |
+| Скрипт                       | Что пишет                                                                   | Когда                                                |
+|------------------------------|-----------------------------------------------------------------------------|------------------------------------------------------|
+| `index_stage1.py EXP STAGE1` | `STAGE1/train.json`, `STAGE1/test.json` (проверочная часть)                 | после первой стадии, перед обучением BEN и Scene-GCN |
+| `make_test_split.py EXP`     | `dpc_scenes/test_split.json`, `eval/manifest_test.jsonl`                    | перед выводом на тестовой части                      |
+| `make_shape500.py EXP`       | `eval/shape500/`: список 500 видов, эталон с `mesh_watertight.ply`, перечни | перед подсчётом формы                                |
 
 Виды без видимых предметов во все списки не попадают: на них падает подсчёт отношений DPC.
 Порядок команд — [docs/front3d.md](../../docs/front3d.md).

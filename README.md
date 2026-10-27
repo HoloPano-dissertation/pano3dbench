@@ -33,10 +33,10 @@ PYTHONPATH=src python -m pano3dbench run --config configs/demo/smoke.json
 
 ## Воспроизведение статьи
 
-| Набор | Документ | Что воспроизводится |
-|---|---|---|
-| iGibson | [docs/igibson.md](docs/igibson.md) | пять конфигураций методов, две контрольные строки на 11 классах, сравнение формы LDIF и MGN |
-| 3D-FRONT | [docs/front3d.md](docs/front3d.md) | обучение компонент на собственном наборе и оценка на его тестовой части |
+| Набор    | Документ                           | Что воспроизводится                                                                         |
+|----------|------------------------------------|---------------------------------------------------------------------------------------------|
+| iGibson  | [docs/igibson.md](docs/igibson.md) | пять конфигураций методов, две контрольные строки на 11 классах, сравнение формы LDIF и MGN |
+| 3D-FRONT | [docs/front3d.md](docs/front3d.md) | обучение компонент на собственном наборе и оценка на его тестовой части                     |
 
 Строку статьи можно получить двумя путями, которые дают одинаковые числа:
 
@@ -74,20 +74,20 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 
 ## Документация
 
-| Документ | О чём |
-|---|---|
-| [docs/igibson.md](docs/igibson.md) | воспроизведение статьи на iGibson: команды, конфигурации, числа, оговорки |
-| [docs/front3d.md](docs/front3d.md) | воспроизведение на 3D-FRONT |
-| [docs/front3d_dataset.md](docs/front3d_dataset.md) | набор 3D-FRONT версии 1: состав, параметры, как собрать |
-| [docs/methods.md](docs/methods.md) | три метода как конфигурации DPC, выбор конфигурации запуска |
-| [docs/metrics.md](docs/metrics.md) | каждый показатель, протокол классов, форма, свой показатель |
-| [docs/architecture.md](docs/architecture.md) | устройство, команды, окружения, кластер, подключение своей модели |
-| [src/pano3dbench/metrics/README.md](src/pano3dbench/metrics/README.md) | как по шагам считается каждый показатель |
-| [configs/README.md](configs/README.md) | за что отвечает каждая конфигурация |
-| [scripts/README.md](scripts/README.md) | за что отвечает каждый скрипт и с какими аргументами он запускается |
-| [runners/README.md](runners/README.md) | договор раннера модели |
-| [training/README.md](training/README.md) | обучение детектора и HorizonNet на 3D-FRONT |
-| [configs/front3d/dpc/README.md](configs/front3d/dpc/README.md) | обучение BEN, LDIF, MGN и Scene-GCN на 3D-FRONT |
+| Документ                                                               | О чём                                                                     |
+|------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| [docs/igibson.md](docs/igibson.md)                                     | воспроизведение статьи на iGibson: команды, конфигурации, числа, оговорки |
+| [docs/front3d.md](docs/front3d.md)                                     | воспроизведение на 3D-FRONT                                               |
+| [docs/front3d_dataset.md](docs/front3d_dataset.md)                     | набор 3D-FRONT версии 1: состав, параметры, как собрать                   |
+| [docs/methods.md](docs/methods.md)                                     | три метода как конфигурации DPC, выбор конфигурации запуска               |
+| [docs/metrics.md](docs/metrics.md)                                     | каждый показатель, протокол классов, форма, свой показатель               |
+| [docs/architecture.md](docs/architecture.md)                           | устройство, команды, окружения, кластер, подключение своей модели         |
+| [src/pano3dbench/metrics/README.md](src/pano3dbench/metrics/README.md) | как по шагам считается каждый показатель                                  |
+| [configs/README.md](configs/README.md)                                 | за что отвечает каждая конфигурация                                       |
+| [scripts/README.md](scripts/README.md)                                 | за что отвечает каждый скрипт и с какими аргументами он запускается       |
+| [runners/README.md](runners/README.md)                                 | договор раннера модели                                                    |
+| [training/README.md](training/README.md)                               | обучение детектора и HorizonNet на 3D-FRONT                               |
+| [configs/front3d/dpc/README.md](configs/front3d/dpc/README.md)         | обучение BEN, LDIF, MGN и Scene-GCN на 3D-FRONT                           |
 
 ## Состав репозитория
 
