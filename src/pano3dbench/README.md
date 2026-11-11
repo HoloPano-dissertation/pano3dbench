@@ -32,23 +32,24 @@ flowchart LR
 
 ## Файлы и папки
 
-| Путь                                      | За что отвечает                                                                                      |
-|-------------------------------------------|------------------------------------------------------------------------------------------------------|
-| `cli.py`                                  | разбирает аргументы `pano3dbench run`, `detect2d` и `env ...` и вызывает действие                    |
-| `__main__.py`                             | позволяет запускать ядро как `python -m pano3dbench`                                                 |
-| `experiment.py`                           | собирает эксперимент из конфигурации: `create_dataset`, `create_prediction_source`, `create_metrics` |
-| `scene.py`                                | контракт данных: `SceneSample` (вход), `SceneOutput` (сцена), `SceneObject`, `SceneRelation`         |
-| `registry.py`                             | `ComponentRegistry`: имя из YAML (`fixture`, `manifest`, `object_map`) → класс                       |
-| `provenance.py`                           | ревизия git для `run.json`                                                                           |
-| [`config/`](config/README.md)             | чтение и проверка конфигурации эксперимента                                                          |
-| [`datasets/`](datasets/README.md)         | откуда берутся примеры и эталонные сцены                                                             |
-| [`predictions/`](predictions/README.md)   | откуда берутся предсказания: готовые JSON или внешний раннер                                         |
-| [`evaluation/`](evaluation/README.md)     | ход оценки, сводная статистика, запись результатов                                                   |
-| [`metrics/`](metrics/README.md)           | правила показателей: макет, обнаружение, физика, форма                                               |
-| [`detection2d/`](detection2d/README.md)   | 2D-детектирование на панораме: маски RLE, учёт шва, AP в стиле COCO (`pano3dbench detect2d`)         |
-| [`geometry/`](geometry/README.md)         | математика без знания об экспериментах: рамки, многоугольники, облака точек                          |
-| [`file_formats/`](file_formats/README.md) | чтение сеток PLY/OBJ и облаков точек JSON/F32                                                        |
-| [`environments/`](environments/README.md) | сборка и поиск изолированных окружений моделей                                                       |
+| Путь                                        | За что отвечает                                                                                      |
+|---------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `cli.py`                                    | разбирает аргументы `pano3dbench run`, `detect2d`, `draw` и `env ...` и вызывает действие            |
+| `__main__.py`                               | позволяет запускать ядро как `python -m pano3dbench`                                                 |
+| `experiment.py`                             | собирает эксперимент из конфигурации: `create_dataset`, `create_prediction_source`, `create_metrics` |
+| `scene.py`                                  | контракт данных: `SceneSample` (вход), `SceneOutput` (сцена), `SceneObject`, `SceneRelation`         |
+| `registry.py`                               | `ComponentRegistry`: имя из YAML (`fixture`, `manifest`, `object_map`) → класс                       |
+| `provenance.py`                             | ревизия git для `run.json`                                                                           |
+| [`config/`](config/README.md)               | чтение и проверка конфигурации эксперимента                                                          |
+| [`datasets/`](datasets/README.md)           | откуда берутся примеры и эталонные сцены                                                             |
+| [`predictions/`](predictions/README.md)     | откуда берутся предсказания: готовые JSON или внешний раннер                                         |
+| [`evaluation/`](evaluation/README.md)       | ход оценки, сводная статистика, запись результатов                                                   |
+| [`metrics/`](metrics/README.md)             | правила показателей: макет, обнаружение, физика, форма                                               |
+| [`detection2d/`](detection2d/README.md)     | 2D-детектирование на панораме: маски RLE, учёт шва, AP в стиле COCO (`pano3dbench detect2d`)         |
+| [`visualization/`](visualization/README.md) | рамки и макет поверх панорамы (`pano3dbench draw`); Pillow — необязательная зависимость `viz`        |
+| [`geometry/`](geometry/README.md)           | математика без знания об экспериментах: рамки, многоугольники, облака точек                          |
+| [`file_formats/`](file_formats/README.md)   | чтение сеток PLY/OBJ и облаков точек JSON/F32                                                        |
+| [`environments/`](environments/README.md)   | сборка и поиск изолированных окружений моделей                                                       |
 
 ## Как расширять
 

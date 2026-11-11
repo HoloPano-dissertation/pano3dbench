@@ -17,6 +17,12 @@ from pano3dbench.environments import (
     verify_checkpoints,
 )
 from pano3dbench.experiment import run_experiment
+from pano3dbench.visualization import (
+    OverlayOptions,
+    manifest_overlays,
+    read_json,
+    render_overlay,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -41,6 +47,29 @@ def _parser() -> argparse.ArgumentParser:
     detect_parser.add_argument(
         "--manifest", help="manifest.jsonl limiting the panoramas to score"
     )
+
+    draw_parser = subparsers.add_parser(
+        "draw",
+        help="draw ground-truth and predicted 3D boxes over panoramas",
+    )
+    draw_parser.add_argument("--output", required=True, help="image file or directory")
+    draw_parser.add_argument("--image", help="one panorama")
+    draw_parser.add_argument("--ground-truth", help="ground-truth scene JSON")
+    draw_parser.add_argument("--prediction", help="predicted scene JSON")
+    draw_parser.add_argument(
+        "--manifest", help="manifest.jsonl: draw its panoramas into --output"
+    )
+    draw_parser.add_argument(
+        "--predictions", help="directory of <sample_id>.json predictions"
+    )
+    draw_parser.add_argument(
+        "--sample", action="append", help="sample_id to draw (repeatable)"
+    )
+    draw_parser.add_argument("--limit", type=int, help="draw at most this many")
+    draw_parser.add_argument("--min-score", type=float, default=0.0)
+    draw_parser.add_argument("--no-labels", action="store_true")
+    draw_parser.add_argument("--no-layout", action="store_true")
+    draw_parser.add_argument("--line-width", type=int, default=2)
 
     env_parser = subparsers.add_parser(
         "env", help="prepare and inspect isolated model environments"
@@ -177,6 +206,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run(args.config)
     if args.command == "detect2d":
         return _detect2d(args)
+    if args.command == "draw":
+        return _draw(args)
     if args.command == "env":
         return _env(args)
     return 2
@@ -190,4 +221,37 @@ def _detect2d(args: argparse.Namespace) -> int:
         f"Scored {summary['samples']} panorama(s): box AP {summary['box']['ap']:.3f}, "
         f"mask AP {summary['mask']['ap']:.3f}. Artifacts: {args.output}"
     )
+    return 0
+
+
+def _draw(args: argparse.Namespace) -> int:
+    options = OverlayOptions(
+        min_score=args.min_score,
+        labels=not args.no_labels,
+        layout=not args.no_layout,
+        line_width=args.line_width,
+    )
+    if args.manifest:
+        written = list(
+            manifest_overlays(
+                args.manifest,
+                args.output,
+                args.predictions,
+                args.sample,
+                args.limit,
+                options,
+            )
+        )
+        print(f"Drew {len(written)} panorama(s) into {args.output}")
+        return 0
+    if not args.image:
+        raise SystemExit("Pass --image (one panorama) or --manifest (several).")
+    target = render_overlay(
+        args.image,
+        args.output,
+        read_json(args.ground_truth),
+        read_json(args.prediction),
+        options,
+    )
+    print(f"Drew {target}")
     return 0

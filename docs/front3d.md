@@ -190,3 +190,14 @@ pano3dbench detect2d --coco $EXP/coco/test.json \
 ```
 
 Учёт шва и смысл чисел — в [metrics.md](metrics.md#2d-детектирование-на-панораме-pano3dbench-detect2d).
+
+## 6. Рамки на панораме
+
+Эталон и предсказания любой конфигурации можно нарисовать поверх панорам тестовой части:
+
+```bash
+pano3dbench draw --manifest $EXP/eval/manifest_pred_dpc.jsonl --predictions $EXP/eval/pred_dpc \
+    --output artifacts/overlay_dpc --limit 20
+```
+
+Устройство и параметры — в [visualization.md](visualization.md).
