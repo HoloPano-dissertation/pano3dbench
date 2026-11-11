@@ -1,0 +1,22 @@
+seed: 42
+
+metrics:
+  - type: layout_iou_3d
+  - type: object_map
+    parameters:
+      iou_threshold: 0.15
+  - type: object_map_dataset
+    parameters:
+      iou_threshold: 0.15
+  - type: object_map_dataset
+    parameters:
+      iou_threshold: 0.15
+      classes: [table, lighting, chair, storage unit, bed, sofa, cabinet,
+                media unit, plants, other, shelf, accessory, appliance, electronics]
+      per_class: true
+      name: ap
+  - type: collision_rate
+  - type: layout_violation_rate
+    parameters:
+      tolerance: 0.05
+  - type: layout_penetration

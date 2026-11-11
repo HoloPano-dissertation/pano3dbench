@@ -176,3 +176,89 @@ def test_aggregate_has_bootstrap_ci() -> None:
 def test_aggregate_single_value() -> None:
     summary = aggregate([0.7], seed=1)
     assert summary["ci95_low"] == summary["ci95_high"]
+
+
+def _box_at(x: float) -> BoundingBox3D:
+    return BoundingBox3D((x, 0, 0), (x + 1, 1, 1))
+
+
+def _class_scenes() -> tuple[list[SceneOutput], list[SceneOutput]]:
+    truth = SceneOutput(
+        layout=None,
+        objects=(
+            SceneObject("b", "bed", _box_at(0)),
+            SceneObject("c1", "chair", _box_at(2)),
+            SceneObject("c2", "chair", _box_at(4)),
+            SceneObject("l", "lamp", _box_at(6)),
+        ),
+    )
+    prediction = SceneOutput(
+        layout=None,
+        objects=(
+            SceneObject("b", "bed", _box_at(0), 0.9),
+            SceneObject("c1", "chair", _box_at(2), 0.8),
+            SceneObject("c3", "chair", _box_at(20), 0.7),
+            SceneObject("l", "lamp", _box_at(30), 0.6),
+        ),
+    )
+    return [prediction], [truth]
+
+
+def test_dataset_map_reports_each_class_with_its_ground_truth_count() -> None:
+    predictions, truths = _class_scenes()
+    metric = ObjectDetectionMAPDataset({"iou_threshold": 0.5})
+    summary = metric.summarize_dataset(predictions, truths)
+
+    assert summary["classes"] == {
+        "bed": {"ap": 1.0, "gt_objects": 1, "predictions": 1},
+        "chair": {"ap": 0.5, "gt_objects": 2, "predictions": 2},
+        "lamp": {"ap": 0.0, "gt_objects": 1, "predictions": 1},
+    }
+    assert summary["gt_objects"] == 4
+    assert summary["value"] == pytest.approx(0.5)
+    assert metric.compute_dataset(predictions, truths) == pytest.approx(0.5)
+
+
+def test_per_class_rows_match_the_breakdown_of_the_mean(tmp_path: Path) -> None:
+    predictions, truths = _class_scenes()
+    sample = SceneSample("s1", Path(__file__), ground_truth=truths[0])
+    metrics = [
+        ObjectDetectionMAPDataset({"iou_threshold": 0.5}),
+        *(
+            ObjectDetectionMAPDataset(
+                {"iou_threshold": 0.5, "classes": [label], "name": f"ap_{label}"}
+            )
+            for label in ("bed", "chair", "lamp")
+        ),
+    ]
+    summary = Evaluator(
+        _config(tmp_path),
+        _ListDataset([sample]),
+        _FixedEstimator(predictions[0]),
+        metrics,
+    ).run().summary
+
+    breakdown = summary["object_map_dataset"]["classes"]
+    for label in ("bed", "chair", "lamp"):
+        row = summary[f"ap_{label}"]
+        assert row["value"] == breakdown[label]["ap"]
+        assert row["gt_objects"] == breakdown[label]["gt_objects"]
+
+
+def test_report_lists_best_and_worst_classes(tmp_path: Path) -> None:
+    predictions, truths = _class_scenes()
+    sample = SceneSample("s1", Path(__file__), ground_truth=truths[0])
+    Evaluator(
+        _config(tmp_path),
+        _ListDataset([sample]),
+        _FixedEstimator(predictions[0]),
+        [ObjectDetectionMAPDataset({"iou_threshold": 0.5})],
+    ).run()
+
+    report = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "## Per-class AP: object_map_dataset" in report
+    assert "| 1 | bed | 1.000 | 1 | 1 |" in report
+    assert "| 3 | lamp | 0.000 | 1 | 1 |" in report
+    assert "- Best classes: bed 1.000 (1 GT)" in report
+    assert "- Worst classes: lamp 0.000 (1 GT)" in report
+    assert "standard deviation 0.408, range 0.000–1.000" in report

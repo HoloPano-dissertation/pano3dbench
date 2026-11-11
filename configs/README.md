@@ -26,7 +26,7 @@ configs/
 ├── protocols/      общий протокол показателей (boxes.yaml)
 ├── demo/           проверки без GPU и данных, вместе с тестовой сценой
 ├── igibson/        набор iGibson: runs/ + dpc/{training,inference}/ + protocols/
-└── front3d/        набор 3D-FRONT: runs/ + dpc/{training,inference}/ + splits/
+└── front3d/        набор 3D-FRONT: runs/ + dpc/{training,inference}/ + protocols/ + splits/
 ```
 
 ## `environments/` — окружения моделей
@@ -151,10 +151,15 @@ DeepPanoContext, своей конфигурации у них нет.
 
 | Файл                         | Что считает                                                             |
 |------------------------------|-------------------------------------------------------------------------|
-| `dpc_rescore.yaml`           | DPC, 100 шагов; протокол `boxes.yaml`                                   |
+| `dpc_rescore.yaml`           | DPC, 100 шагов; протокол `front3d/protocols/boxes_per_class.yaml`       |
 | `dpc_s20_rescore.yaml`       | DPC, 20 шагов                                                           |
 | `im3d_rescore.yaml`          | Im3D-Pano                                                               |
 | `total3d_rescore.yaml`       | Total3D-Pano                                                            |
 | `gt_sanity.yaml`             | эталон вместо предсказаний: mAP и IoU макета 1.0, физика самого эталона |
 | `shape_im3d_rescore.yaml`    | форма Im3D-Pano на 500 видах: Чамфер и F-мера, `normalize: canonical`   |
 | `shape_total3d_rescore.yaml` | форма Total3D-Pano на тех же видах                                      |
+
+Строки рамок наследуют `../protocols/boxes_per_class.yaml`: это общий `boxes.yaml` плюс
+AP по каждому из 14 классов набора (`per_class: true`, строки `ap_<класс>`). Списки
+показателей при `extends` не сливаются, поэтому протокол повторяет показатели `boxes.yaml`
+целиком.

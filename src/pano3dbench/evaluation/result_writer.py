@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import statistics
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +58,10 @@ class ResultWriter:
             "|---|---:|---:|---:|---:|",
         ]
         lines.extend(_report_row(name, values) for name, values in summary.items())
+        for name, values in summary.items():
+            classes = values.get("classes") or {}
+            if len(classes) > 1:
+                lines.extend(_class_section(name, classes))
         (self.output_dir / "report.md").write_text(
             "\n".join(lines) + "\n", encoding="utf-8"
         )
@@ -73,4 +79,41 @@ def _report_row(metric_name: str, values: dict[str, Any]) -> str:
         f"| {metric_name} | {values['count']} | "
         f"{values['mean']:.6f} | {values['median']:.6f} | "
         f"[{values['ci95_low']:.6f}, {values['ci95_high']:.6f}] |"
+    )
+
+
+def _class_section(metric_name: str, classes: dict[str, dict[str, Any]]) -> list[str]:
+    ranked = sorted(classes.items(), key=lambda item: (-item[1]["ap"], item[0]))
+    scores = [values["ap"] for _, values in ranked]
+    edge = min(3, len(ranked) // 2)
+    lines = [
+        "",
+        f"## Per-class AP: {metric_name}",
+        "",
+        "| Rank | Class | AP | GT objects | Predictions |",
+        "|---:|---|---:|---:|---:|",
+    ]
+    lines.extend(
+        f"| {rank} | {label} | {values['ap']:.3f} | {values['gt_objects']} | "
+        f"{values.get('predictions', 0)} |"
+        for rank, (label, values) in enumerate(ranked, start=1)
+    )
+    lines.extend(
+        [
+            "",
+            f"- Best classes: {_class_list(ranked[:edge])}",
+            f"- Worst classes: {_class_list(reversed(ranked[-edge:]))}",
+            f"- Spread over {len(scores)} classes: mean {statistics.fmean(scores):.3f}, "
+            f"median {statistics.median(scores):.3f}, "
+            f"standard deviation {statistics.pstdev(scores):.3f}, "
+            f"range {scores[-1]:.3f}–{scores[0]:.3f}",
+        ]
+    )
+    return lines
+
+
+def _class_list(items: Iterable[tuple[str, dict[str, Any]]]) -> str:
+    return ", ".join(
+        f"{label} {values['ap']:.3f} ({values['gt_objects']} GT)"
+        for label, values in items
     )
