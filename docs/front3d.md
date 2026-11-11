@@ -171,3 +171,22 @@ pano3dbench run --config configs/front3d/runs/shape_im3d_rescore.yaml
 перечню конвертера: тот ссылается на эталон без замкнутых сеток. Сопоставление по
 ориентированному 3D-IoU 0.15, `normalize: canonical`, 2048 точек, порог F-меры 0.1.
 Устройство показателей — в [metrics.md](metrics.md#форма-объектов).
+
+## 5. 2D-детектирование
+
+Качество первого звена — 2D-детектора на панораме — считается по тем же тестовым видам
+против COCO-разметки генератора (`coco/test.json`). Срабатывания одинаковы у всех
+конфигураций: детектор общий, оптимизация отношений 2D-рамки не меняет. Поэтому
+достаточно выгрузить их из вывода одной конфигурации:
+
+```bash
+cd $DPC
+PYTHONPATH=. conda run -n Pano3D python $TBX/scripts/dpc/dpc_export_detections.py \
+    $EXP/eval/manifest_pred_im3d.jsonl $EXP/eval/detections_im3d.jsonl \
+    --repo $DPC --pred-root out/pano3d_front3d_im3d
+pano3dbench detect2d --coco $EXP/coco/test.json \
+    --detections $EXP/eval/detections_im3d.jsonl \
+    --manifest $EXP/eval/manifest_pred_im3d.jsonl --output artifacts/detector_2d_front3d
+```
+
+Учёт шва и смысл чисел — в [metrics.md](metrics.md#2d-детектирование-на-панораме-pano3dbench-detect2d).

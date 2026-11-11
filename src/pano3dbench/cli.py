@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from pano3dbench.config import ExperimentConfig
+from pano3dbench.detection2d import run_detection_evaluation
 from pano3dbench.environments import (
     ENVIRONMENT_MANAGERS,
     build_plan,
@@ -27,6 +28,19 @@ def _parser() -> argparse.ArgumentParser:
 
     run_parser = subparsers.add_parser("run", help="run one experiment")
     run_parser.add_argument("--config", required=True, help="YAML or JSON config")
+
+    detect_parser = subparsers.add_parser(
+        "detect2d",
+        help="score 2D detections of panoramas against COCO annotations",
+    )
+    detect_parser.add_argument("--coco", required=True, help="COCO annotations")
+    detect_parser.add_argument(
+        "--detections", required=True, help="JSON lines, one panorama per line"
+    )
+    detect_parser.add_argument("--output", required=True, help="output directory")
+    detect_parser.add_argument(
+        "--manifest", help="manifest.jsonl limiting the panoramas to score"
+    )
 
     env_parser = subparsers.add_parser(
         "env", help="prepare and inspect isolated model environments"
@@ -161,6 +175,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "run":
         return _run(args.config)
+    if args.command == "detect2d":
+        return _detect2d(args)
     if args.command == "env":
         return _env(args)
     return 2
+
+
+def _detect2d(args: argparse.Namespace) -> int:
+    summary = run_detection_evaluation(
+        args.coco, args.detections, args.output, args.manifest
+    )
+    print(
+        f"Scored {summary['samples']} panorama(s): box AP {summary['box']['ap']:.3f}, "
+        f"mask AP {summary['mask']['ap']:.3f}. Artifacts: {args.output}"
+    )
+    return 0

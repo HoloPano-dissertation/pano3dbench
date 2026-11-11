@@ -61,7 +61,7 @@ class ResultWriter:
         for name, values in summary.items():
             classes = values.get("classes") or {}
             if len(classes) > 1:
-                lines.extend(_class_section(name, classes))
+                lines.extend(class_section(name, classes))
         (self.output_dir / "report.md").write_text(
             "\n".join(lines) + "\n", encoding="utf-8"
         )
@@ -82,7 +82,7 @@ def _report_row(metric_name: str, values: dict[str, Any]) -> str:
     )
 
 
-def _class_section(metric_name: str, classes: dict[str, dict[str, Any]]) -> list[str]:
+def class_section(metric_name: str, classes: dict[str, dict[str, Any]]) -> list[str]:
     ranked = sorted(classes.items(), key=lambda item: (-item[1]["ap"], item[0]))
     scores = [values["ap"] for _, values in ranked]
     edge = min(3, len(ranked) // 2)

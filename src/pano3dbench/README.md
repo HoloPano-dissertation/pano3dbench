@@ -34,7 +34,7 @@ flowchart LR
 
 | Путь                                      | За что отвечает                                                                                      |
 |-------------------------------------------|------------------------------------------------------------------------------------------------------|
-| `cli.py`                                  | разбирает аргументы `pano3dbench run` и `pano3dbench env ...` и вызывает действие                    |
+| `cli.py`                                  | разбирает аргументы `pano3dbench run`, `detect2d` и `env ...` и вызывает действие                    |
 | `__main__.py`                             | позволяет запускать ядро как `python -m pano3dbench`                                                 |
 | `experiment.py`                           | собирает эксперимент из конфигурации: `create_dataset`, `create_prediction_source`, `create_metrics` |
 | `scene.py`                                | контракт данных: `SceneSample` (вход), `SceneOutput` (сцена), `SceneObject`, `SceneRelation`         |
@@ -45,6 +45,7 @@ flowchart LR
 | [`predictions/`](predictions/README.md)   | откуда берутся предсказания: готовые JSON или внешний раннер                                         |
 | [`evaluation/`](evaluation/README.md)     | ход оценки, сводная статистика, запись результатов                                                   |
 | [`metrics/`](metrics/README.md)           | правила показателей: макет, обнаружение, физика, форма                                               |
+| [`detection2d/`](detection2d/README.md)   | 2D-детектирование на панораме: маски RLE, учёт шва, AP в стиле COCO (`pano3dbench detect2d`)         |
 | [`geometry/`](geometry/README.md)         | математика без знания об экспериментах: рамки, многоугольники, облака точек                          |
 | [`file_formats/`](file_formats/README.md) | чтение сеток PLY/OBJ и облаков точек JSON/F32                                                        |
 | [`environments/`](environments/README.md) | сборка и поиск изолированных окружений моделей                                                       |
