@@ -2915,7 +2915,6 @@
 7012c81c-39f1-4b0f-978c-a501aca9e77e/OtherRoom-76498
 705dea4d-6d7c-471d-8310-78a5e86e7b78/LivingDiningRoom-515
 7067f026-f793-4931-9e6f-d6372015de5a/MasterBedroom-261
-7067f026-f793-4931-9e6f-d6372015de5a/SecondBedroom-130
 706971af-5f9a-4b69-8d59-dac709a864e5/LivingRoom-2362
 706c2d0b-66ca-43f4-9c40-09398a8b4bda/Hallway-19765
 7072e689-2751-4b9a-b7cd-fe8d71d2db78/LivingRoom-515
@@ -3723,7 +3722,6 @@
 90fff599-194c-4c8d-b846-109f8a6c2814/Bedroom-515
 9105f71c-bbd1-4bc5-8b06-88057dfefa08/SecondBedroom-218174
 911575f5-aea1-486d-bf41-c7f9b0bbd258/LivingDiningRoom-27931
-911575f5-aea1-486d-bf41-c7f9b0bbd258/LivingDiningRoom-28029
 911575f5-aea1-486d-bf41-c7f9b0bbd258/LivingDiningRoom-35939
 911575f5-aea1-486d-bf41-c7f9b0bbd258/MasterBedroom-36096
 911575f5-aea1-486d-bf41-c7f9b0bbd258/MasterBedroom-36118
@@ -5583,7 +5581,6 @@ d633f518-23a1-41dc-9e99-f42419798258/Bedroom-665
 d633f518-23a1-41dc-9e99-f42419798258/LivingRoom-950
 d633f518-23a1-41dc-9e99-f42419798258/MasterBedroom-1275
 d6359e97-edea-43ac-a05a-22a9fc17f6a0/KidsRoom-62894
-d6359e97-edea-43ac-a05a-22a9fc17f6a0/MasterBedroom-62978
 d6359e97-edea-43ac-a05a-22a9fc17f6a0/SecondBedroom-58474
 d650faee-f134-46fd-b8f7-38712998f3b5/Bedroom-2246
 d65507af-393d-47c1-9cc5-aa68c6d2365d/SecondBedroom-3777

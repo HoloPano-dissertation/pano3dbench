@@ -18,7 +18,12 @@ def main() -> int:
     for split in ("train", "val", "test"):
         for room in (args.exp / "splits" / f"{split}.txt").read_text().split():
             member[room] = split
-    found = {"train": [], "val": [], "test": [], "unknown": []}
+    excluded_rows = args.exp / "splits" / "excluded_rooms.jsonl"
+    if excluded_rows.is_file():
+        for line in excluded_rows.read_text().splitlines():
+            if line.strip():
+                member.setdefault(json.loads(line)["room_id"], "excluded")
+    found = {"train": [], "val": [], "test": [], "excluded": [], "unknown": []}
     empty = dict.fromkeys(found, 0)
     for path in args.stage1.glob("*/*/data.pkl"):
         folder = path.parent
@@ -34,7 +39,8 @@ def main() -> int:
         (out / f"{name}.json").write_text(json.dumps(rows, indent=1))
         print(f"{name}.json <- {ours}: {len(rows)} cameras")
     print("skipped without objects:", empty)
-    print("unknown:", len(found["unknown"]), "| from test:", len(found["test"]))
+    print("unknown:", len(found["unknown"]), "| from test:", len(found["test"]),
+          "| from excluded rooms:", len(found["excluded"]))
     return 1 if found["unknown"] or found["test"] else 0
 
 

@@ -2,7 +2,7 @@
   "policy_id": "excluded-rooms",
   "user_decision": "Exclude these rooms from train, validation, test and published benchmark; do not reconstruct geometry or delete source assets.",
   "expected_original_rooms": 10514,
-  "expected_retained_rooms": 9545,
+  "expected_retained_rooms": 9541,
   "views_per_room": 4,
   "source_root": "3D-FRONT-SCENE",
   "source_room_list": "rooms-valid.json",
@@ -6790,6 +6790,34 @@
       "split": "excluded",
       "reason": "Floor area 206.80 m^2 is outside the [1, 200] range the metric scale check allows",
       "evidence": "state/metric_scale.json of the ground truth export"
+    },
+    {
+      "room_id": "7a067d61-81c9-49d2-8e3e-af63794d9a1a/SecondBedroom-5538",
+      "house_id": "7a067d61-81c9-49d2-8e3e-af63794d9a1a",
+      "split": "excluded",
+      "reason": "Rendered panorama is black: view 1",
+      "evidence": "Brightness check of every rendered panorama of the set: no pixel brighter than 5 of 255"
+    },
+    {
+      "room_id": "911575f5-aea1-486d-bf41-c7f9b0bbd258/LivingDiningRoom-28029",
+      "house_id": "911575f5-aea1-486d-bf41-c7f9b0bbd258",
+      "split": "excluded",
+      "reason": "Rendered panorama is black: views 0, 1, 2 and 3",
+      "evidence": "Brightness check of every rendered panorama of the set: no pixel brighter than 5 of 255"
+    },
+    {
+      "room_id": "7067f026-f793-4931-9e6f-d6372015de5a/SecondBedroom-130",
+      "house_id": "7067f026-f793-4931-9e6f-d6372015de5a",
+      "split": "excluded",
+      "reason": "Rendered panorama is black: view 3",
+      "evidence": "Brightness check of every rendered panorama of the set: no pixel brighter than 5 of 255"
+    },
+    {
+      "room_id": "d6359e97-edea-43ac-a05a-22a9fc17f6a0/MasterBedroom-62978",
+      "house_id": "d6359e97-edea-43ac-a05a-22a9fc17f6a0",
+      "split": "excluded",
+      "reason": "Rendered panorama is black: view 3",
+      "evidence": "Brightness check of every rendered panorama of the set: no pixel brighter than 5 of 255"
     }
   ]
 }

@@ -17,6 +17,7 @@ def main() -> int:
     parser.add_argument("--out", type=Path)
     parser.add_argument("--count", type=int, default=500)
     parser.add_argument("--seed", type=int, default=20261016)
+    parser.add_argument("--views", type=Path)
     args = parser.parse_args()
     out = args.out or args.exp / "eval" / "shape500"
     (out / "gt").mkdir(parents=True, exist_ok=True)
@@ -27,7 +28,12 @@ def main() -> int:
     by_dpc = {dpc_name(m["sample_id"]): m for m in manifest}
     if set(by_dpc) != set(split):
         raise SystemExit("manifest_test.jsonl and test_split.json disagree")
-    chosen = sorted(random.Random(args.seed).sample(sorted(split), args.count))
+    if args.views:
+        wanted = {dpc_name(v) for v in args.views.read_text().split()}
+        chosen = sorted(wanted & set(split))
+        print("views of the list missing from the test split:", len(wanted - set(split)))
+    else:
+        chosen = sorted(random.Random(args.seed).sample(sorted(split), args.count))
     (out / "test_split_shape500.json").write_text(json.dumps(chosen, indent=1))
     (out / "views.txt").write_text("".join(by_dpc[c]["sample_id"] + "\n" for c in chosen))
 

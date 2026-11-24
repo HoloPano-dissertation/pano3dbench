@@ -99,7 +99,7 @@ python $TBX/scripts/dpc/dpc_loader_probe.py $TBX/configs/front3d/dpc/training/bd
    python $TBX/scripts/front3d/eval/make_test_split.py $EXP
    ```
    Пишет `dpc_scenes/test_split.json` и перечень `eval/manifest_test.jsonl` — тот же набор
-   видов (5707 на нашем наборе, 21 вид без предметов исключён).
+   видов (5703 на нашем наборе, 21 вид без предметов исключён).
 2. Вывод каждой конфигурации:
    ```bash
    python main.py $TBX/configs/front3d/dpc/inference/pano3d_front3d.yaml --mode qtest --model.scene_gcn.relation_adjust True
@@ -143,16 +143,19 @@ python $TBX/scripts/dpc/dpc_loader_probe.py $TBX/configs/front3d/dpc/training/bd
 
 ## 4. Форма
 
-Форма считается на 500 тестовых видах. Список зафиксирован в
-[configs/front3d/shape500_views.txt](../configs/front3d/shape500_views.txt) и строится заново
-так:
+Форма считается на 499 тестовых видах. Список зафиксирован в
+[configs/front3d/shape500_views.txt](../configs/front3d/shape500_views.txt): это 500 видов,
+выбранных `random.Random(20261016).sample` из тестовых, без вида комнаты, исключённой из
+набора после выбора (чёрная панорама, [front3d_dataset.md](front3d_dataset.md)). Эталон и
+список для DPC строятся так:
 
 ```bash
-python $TBX/scripts/front3d/eval/make_shape500.py $EXP
+python $TBX/scripts/front3d/eval/make_shape500.py $EXP --views $TBX/configs/front3d/shape500_views.txt
 cp $EXP/eval/shape500/test_split_shape500.json $EXP/dpc_scenes/
 ```
 
-Скрипт выбирает виды `random.Random(20261016).sample` из списка тестовых видов и пишет эталон
+Без `--views` скрипт выбирает виды `random.Random(20261016).sample` из списка тестовых видов.
+Скрипт пишет эталон
 `eval/shape500/gt/`, в котором форма каждого предмета — `mesh_watertight.ply` из его папки в
 `objects/`. Список копируется в `dpc_scenes/`, потому что DPC ищет сцены относительно папки
 файла разбиения.
