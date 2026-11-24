@@ -36,18 +36,18 @@ def occupancy(triangles, resolution=FIELD_RESOLUTION, half_extent=HALF_EXTENT,
     return ndimage.binary_fill_holes(sealed), shell
 
 
-def signed_field(solid, shell, half_extent=HALF_EXTENT):
+def signed_field(solid, half_extent=HALF_EXTENT):
     resolution = solid.shape[0]
     voxel = 2.0 * half_extent / resolution
-    distance = ndimage.distance_transform_edt(~shell) * voxel
-    sign = np.where(solid, -1.0, 1.0)
-    return (sign * distance).astype(np.float32)
+    outside = ndimage.distance_transform_edt(~solid) - 0.5
+    inside = ndimage.distance_transform_edt(solid) - 0.5
+    return (np.where(solid, -inside, outside) * voxel).astype(np.float32)
 
 
 def sample_field(field, points, half_extent=HALF_EXTENT):
     resolution = field.shape[0]
     coordinates = (np.asarray(points, dtype=float) + half_extent) \
-        / (2.0 * half_extent) * (resolution - 1)
+        / (2.0 * half_extent) * resolution - 0.5
     return ndimage.map_coordinates(field, coordinates.T, order=1, mode="nearest")
 
 
@@ -55,7 +55,7 @@ def coarse_grid(field, resolution=GRID_RESOLUTION, half_extent=HALF_EXTENT):
     axis = np.linspace(-half_extent, half_extent, resolution)
     points = np.stack(np.meshgrid(axis, axis, axis, indexing="ij"), axis=-1)
     values = sample_field(field, points.reshape(-1, 3), half_extent)
-    return values.reshape((resolution,) * 3).astype(np.float32)
+    return values.reshape((resolution,) * 3).transpose(2, 1, 0).astype(np.float32)
 
 
 def near_surface_samples(triangles, field, count=SAMPLE_COUNT,
@@ -113,5 +113,5 @@ def watertight_mesh(field, half_extent=HALF_EXTENT):
     from skimage import measure
     vertices, faces, _, _ = measure.marching_cubes(field, level=0.0)
     resolution = field.shape[0]
-    vertices = vertices / (resolution - 1) * (2.0 * half_extent) - half_extent
+    vertices = (vertices + 0.5) / resolution * (2.0 * half_extent) - half_extent
     return vertices.astype(np.float32), faces.astype(np.int64)

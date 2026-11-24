@@ -24,8 +24,8 @@ def cube_triangles(half):
 @pytest.fixture(scope="module")
 def cube_field():
     triangles = cube_triangles(0.25)
-    solid, shell = sdf_samples.occupancy(triangles, resolution=RESOLUTION)
-    return triangles, solid, sdf_samples.signed_field(solid, shell)
+    solid, _ = sdf_samples.occupancy(triangles, resolution=RESOLUTION)
+    return triangles, solid, sdf_samples.signed_field(solid)
 
 
 def test_interior_is_filled_and_matches_the_cube_volume(cube_field):
@@ -149,8 +149,59 @@ def test_a_cracked_mesh_leaks_until_it_is_sealed():
 def test_a_sealed_mesh_has_an_interior_and_balanced_surface_samples():
     voxel = 2.0 * sdf_samples.HALF_EXTENT / RESOLUTION
     triangles = cracked_box_triangles(0.25, voxel * 1.5)
-    solid, shell = sdf_samples.occupancy(triangles, resolution=RESOLUTION)
-    field = sdf_samples.signed_field(solid, shell)
+    solid, _ = sdf_samples.occupancy(triangles, resolution=RESOLUTION)
+    field = sdf_samples.signed_field(solid)
     assert sdf_samples.sample_field(field, [[0.0, 0.0, 0.0]])[0] < 0
     _, values = sdf_samples.near_surface_samples(triangles, field, count=2000)
     assert 0.2 < (values > 0).mean() < 0.8
+
+
+def plate_triangles(half, thickness):
+    corners = np.array([[x, y, z] for x in (-half, half) for y in (-half, half)
+                        for z in (-thickness / 2, thickness / 2)], dtype=float)
+    faces = [(0, 1, 3), (0, 3, 2), (4, 6, 7), (4, 7, 5), (0, 4, 5), (0, 5, 1),
+             (2, 3, 7), (2, 7, 6), (0, 2, 6), (0, 6, 4), (1, 5, 7), (1, 7, 3)]
+    return np.array([[corners[a], corners[b], corners[c]] for a, b, c in faces])
+
+
+def test_a_part_thinner_than_a_voxel_is_inside_and_labelled_so():
+    voxel = 2.0 * sdf_samples.HALF_EXTENT / RESOLUTION
+    triangles = plate_triangles(0.3, voxel * 0.2)
+    solid, _ = sdf_samples.occupancy(triangles, resolution=RESOLUTION)
+    field = sdf_samples.signed_field(solid)
+    assert sdf_samples.sample_field(field, [[0.0, 0.0, 0.0]])[0] < 0
+    _, values = sdf_samples.near_surface_samples(triangles, field, count=4000,
+                                                 sigma=voxel * 0.2)
+    assert (values < 0).mean() > 0.5
+
+
+def test_the_field_never_vanishes_so_no_sample_falls_on_the_fence(cube_field):
+    _, _, field = cube_field
+    voxel = 2.0 * sdf_samples.HALF_EXTENT / RESOLUTION
+    assert np.abs(field).min() == pytest.approx(voxel / 2, rel=1e-4)
+
+
+def test_near_surface_and_uniform_labels_agree_on_the_same_points(cube_field):
+    triangles, _, field = cube_field
+    points, labels = sdf_samples.near_surface_samples(triangles, field, count=2000)
+    values = sdf_samples.sample_field(field, points)
+    assert np.array_equal(labels > 0, values > 0)
+
+
+def test_watertight_mesh_lies_on_the_cube_faces(cube_field):
+    pytest.importorskip("skimage")
+    _, _, field = cube_field
+    voxel = 2.0 * sdf_samples.HALF_EXTENT / RESOLUTION
+    vertices, _ = sdf_samples.watertight_mesh(field)
+    assert np.abs(vertices).max(axis=0) == pytest.approx([0.25] * 3, abs=1.5 * voxel)
+
+
+def test_coarse_grid_is_stored_z_first_as_gaps_reads_it():
+    voxel = 2.0 * sdf_samples.HALF_EXTENT / RESOLUTION
+    triangles = cube_triangles(0.1) + np.array([0.35, 0.0, -0.35])
+    solid, _ = sdf_samples.occupancy(triangles, resolution=RESOLUTION)
+    grid = sdf_samples.coarse_grid(sdf_samples.signed_field(solid))
+    matrix = sdf_samples.world_to_grid()
+    x, y, z = np.rint(matrix[:3, :3] @ np.array([0.35, 0.0, -0.35]) + matrix[:3, 3]).astype(int)
+    assert grid[z, y, x] < 0
+    assert grid[x, y, z] > 0

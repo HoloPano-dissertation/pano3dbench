@@ -86,8 +86,8 @@ def main() -> None:
         folder = Path(shape).parent
         try:
             triangles = read_ply_triangles(Path(shape)) * LDIF_MESH_SCALE
-            solid, shell = occupancy(triangles)
-            field = signed_field(solid, shell)
+            solid, _ = occupancy(triangles)
+            field = signed_field(solid)
             points, values = near_surface_samples(triangles, field, count=args.samples)
             write_samples(folder / "nss_points.sdf", points, values)
             points, values = uniform_samples(field, count=args.samples)
