@@ -151,9 +151,9 @@ python $TBX/scripts/front3d/qa/check_annotations.py $EXP <папка отчёт�
 
 | Скрипт                       | Что пишет                                                                   | Когда                                                |
 |------------------------------|-----------------------------------------------------------------------------|------------------------------------------------------|
-| `index_stage1.py EXP STAGE1` | `STAGE1/train.json`, `STAGE1/test.json` (проверочная часть)                 | после первой стадии, перед обучением BEN и Scene-GCN |
+| `index_stage1.py EXP STAGE1` | `STAGE1/train.json`, `STAGE1/test.json` (проверочная часть); виды исключённых комнат (`splits/excluded_rooms.jsonl`) пропускаются | после первой стадии, перед обучением BEN и Scene-GCN |
 | `make_test_split.py EXP`     | `dpc_scenes/test_split.json`, `eval/manifest_test.jsonl`                    | перед выводом на тестовой части                      |
-| `make_shape500.py EXP`       | `eval/shape500/`: список 500 видов, эталон с `mesh_watertight.ply`, перечни | перед подсчётом формы                                |
+| `make_shape500.py EXP [--views FILE]` | `eval/shape500/`: список видов, эталон с `mesh_watertight.ply`, перечни; с `--views` — виды из зафиксированного списка (`configs/front3d/shape500_views.txt`, 499 видов), без него — 500 случайных | перед подсчётом формы |
 
 Виды без видимых предметов во все списки не попадают: на них падает подсчёт отношений DPC.
 Порядок команд — [docs/front3d.md](../../docs/front3d.md).

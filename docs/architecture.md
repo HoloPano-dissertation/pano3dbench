@@ -37,6 +37,8 @@ cat artifacts/echo/report.md
 | `... --verify`                               | заново проверить sha256 весов на диске                          |
 | `pano3dbench env doctor`                     | бэкенды, GPU и настройки сборки                                 |
 | `pano3dbench env submit-script --env <spec>` | скрипт sbatch или bash для кластера                             |
+| `pano3dbench detect2d --coco <json> --detections <jsonl> --output <папка>` | AP 2D-детектора на панорамах в стиле COCO с учётом шва ([metrics.md](metrics.md#2d-детектирование-на-панораме-pano3dbench-detect2d)) |
+| `pano3dbench draw --output <файл или папка> ...` | рамки и макет эталона и предсказаний поверх панорамы ([visualization.md](visualization.md)) |
 
 `env prepare` идемпотентна: повторный вызов с той же спецификацией окружение не пересобирает.
 

@@ -69,7 +69,22 @@ to the core.
 
 The comparison protocol is **oriented 3D-IoU of objects at threshold 0.15**, plus layout
 IoU, object collisions, objects outside the layout and penetration. Shape, the only thing
-that separates LDIF from MGN, is measured by `mesh_chamfer` and `mesh_fscore`.
+that separates LDIF from MGN, is measured by `mesh_chamfer` and `mesh_fscore`. The mAP summary holds the AP of every class
+with its ground-truth count, and `report.md` a table of classes, the best and worst of them
+and their spread.
+
+Two more commands take the errors apart link by link:
+
+```bash
+pano3dbench detect2d --coco <coco.json> --detections <detections.jsonl> --output <dir>
+pano3dbench draw --manifest <manifest.jsonl> --predictions <dir> --output <dir>
+```
+
+`detect2d` scores the 2D detector on panoramas with COCO-style AP for boxes and masks,
+aware of the panorama seam and per class, which shows the objects lost at the first link
+already. `draw` paints the layout and the ground-truth and predicted boxes over a panorama
+(`docs/visualization.md`); it needs the optional `viz` dependency (Pillow):
+`pip install -e '.[viz]'`.
 
 ## Layout
 
@@ -86,6 +101,7 @@ pano3dbench/
 │   └── front3d/
 │       ├── front3d_to_igibson.json  mapping of 3D-FRONT classes to the iGibson vocabulary
 │       ├── dpc/             DPC configs on 3D-FRONT: component training and inference
+│       ├── splits/          version 1 of the set: train/val/test and the excluded rooms
 │       └── runs/            paper rows from saved predictions
 ├── docs/                    documentation (Russian); configs/README.md and scripts/README.md list every config and script,
 │                            src/pano3dbench/README.md and the README of each core folder list every source file
