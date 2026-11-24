@@ -1,4 +1,4 @@
-extends: ../../protocols/boxes.yaml
+extends: ../protocols/boxes_per_class.yaml
 
 experiment_name: gt_front3d
 output_dir: ../../../artifacts/gt_front3d

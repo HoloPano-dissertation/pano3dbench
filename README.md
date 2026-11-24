@@ -81,6 +81,7 @@ Python, PyTorch и CUDA. Новый метод подключается ранн
 | [docs/front3d_dataset.md](docs/front3d_dataset.md)                     | набор 3D-FRONT версии 1: состав, параметры, как собрать                   |
 | [docs/methods.md](docs/methods.md)                                     | три метода как конфигурации DPC, выбор конфигурации запуска               |
 | [docs/metrics.md](docs/metrics.md)                                     | каждый показатель, протокол классов, форма, свой показатель               |
+| [docs/visualization.md](docs/visualization.md)                         | рамки эталона и предсказаний поверх панорамы (`pano3dbench draw`)         |
 | [docs/architecture.md](docs/architecture.md)                           | устройство, команды, окружения, кластер, подключение своей модели         |
 | [src/pano3dbench/README.md](src/pano3dbench/README.md)                 | устройство ядра: какой файл за что отвечает, с чего читать код            |
 | [src/pano3dbench/metrics/README.md](src/pano3dbench/metrics/README.md) | как по шагам считается каждый показатель                                  |

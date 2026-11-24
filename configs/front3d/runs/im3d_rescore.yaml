@@ -1,4 +1,4 @@
-extends: ../../protocols/boxes.yaml
+extends: ../protocols/boxes_per_class.yaml
 
 experiment_name: im3d_front3d
 output_dir: ../../../artifacts/im3d_front3d

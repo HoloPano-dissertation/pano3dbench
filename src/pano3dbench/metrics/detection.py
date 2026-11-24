@@ -179,6 +179,13 @@ class ObjectDetectionMAPDataset(Metric):
         predictions: list[SceneOutput],
         ground_truths: list[SceneOutput],
     ) -> float:
+        return float(self.summarize_dataset(predictions, ground_truths)["value"])
+
+    def summarize_dataset(
+        self,
+        predictions: list[SceneOutput],
+        ground_truths: list[SceneOutput],
+    ) -> dict[str, Any]:
         class_detections: dict[str, list[tuple[float, bool]]] = defaultdict(list)
         class_gt_count: dict[str, int] = defaultdict(int)
 
@@ -203,11 +210,21 @@ class ObjectDetectionMAPDataset(Metric):
                     _match_scene(preds, gt_by_label.get(label, []), self.iou_threshold)
                 )
 
-        if not class_gt_count:
-            return 0.0
-
-        average_precisions = [
-            _ap_from_detections(class_detections.get(label, []), total_gt)
-            for label, total_gt in class_gt_count.items()
-        ]
-        return sum(average_precisions) / len(average_precisions)
+        classes = {
+            label: {
+                "ap": _ap_from_detections(class_detections.get(label, []), total_gt),
+                "gt_objects": total_gt,
+                "predictions": len(class_detections.get(label, [])),
+            }
+            for label, total_gt in sorted(class_gt_count.items())
+        }
+        value = (
+            sum(item["ap"] for item in classes.values()) / len(classes)
+            if classes
+            else 0.0
+        )
+        return {
+            "value": value,
+            "gt_objects": sum(class_gt_count.values()),
+            "classes": classes,
+        }

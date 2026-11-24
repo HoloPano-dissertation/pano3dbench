@@ -103,7 +103,7 @@ class Evaluator:
         return {
             metric.name: {
                 "count": len(labelled),
-                "value": float(metric.compute_dataset(predictions, ground_truths)),
+                **_dataset_values(metric, predictions, ground_truths),
                 "dataset_level": True,
             }
             for metric in self.dataset_metrics
@@ -118,6 +118,19 @@ class Evaluator:
             "config": asdict(self.config),
             "estimator": self.prediction_source.provenance(),
         }
+
+
+def _dataset_values(
+    metric: Metric,
+    predictions: list[SceneOutput],
+    ground_truths: list[SceneOutput],
+) -> dict[str, Any]:
+    summarize = getattr(metric, "summarize_dataset", None)
+    if summarize is not None:
+        values = dict(summarize(predictions, ground_truths))
+        values["value"] = float(values["value"])
+        return values
+    return {"value": float(metric.compute_dataset(predictions, ground_truths))}
 
 
 def _require_unique_names(metrics: list[Metric]) -> None:

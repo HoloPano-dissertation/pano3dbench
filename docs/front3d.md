@@ -127,15 +127,19 @@ python $TBX/scripts/dpc/dpc_loader_probe.py $TBX/configs/front3d/dpc/training/bd
    pano3dbench run --config configs/front3d/runs/dpc_rescore.yaml
    ```
    и так же `dpc_s20_rescore.yaml`, `im3d_rescore.yaml`, `total3d_rescore.yaml`. Все они
-   наследуют общий протокол `configs/protocols/boxes.yaml`: mAP при ориентированном
-   3D-IoU 0.15, IoU макета, столкновения, нарушения макета с допуском 0.05, проникание.
+   наследуют протокол `configs/front3d/protocols/boxes_per_class.yaml`: mAP при
+   ориентированном 3D-IoU 0.15, AP по каждому из 14 классов, IoU макета, столкновения,
+   нарушения макета с допуском 0.05, проникание. В `report.md` — таблица AP по классам
+   с числом эталонных предметов, лучшие и худшие классы и разброс
+   ([metrics.md](metrics.md#ap-по-классам-в-сводке-и-отчёте)).
 
 Эталон — `ground_truth/test/...` набора (все предметы, включая заслонённые; система камеры,
 метры).
 
 **Проверка цепочки эталоном.** `configs/front3d/runs/gt_sanity.yaml` подаёт эталон вместо
 предсказаний: mAP и IoU макета должны быть 1.0. Физические показатели самого эталона — точка
-отсчёта для методов: столкновения 0.14, нарушения 0.22, проникание 0.053.
+отсчёта для методов (все 5707 тестовых видов): столкновения 0.125, нарушения 0.213,
+проникание 0.053.
 
 ## 4. Форма
 
@@ -167,3 +171,33 @@ pano3dbench run --config configs/front3d/runs/shape_im3d_rescore.yaml
 перечню конвертера: тот ссылается на эталон без замкнутых сеток. Сопоставление по
 ориентированному 3D-IoU 0.15, `normalize: canonical`, 2048 точек, порог F-меры 0.1.
 Устройство показателей — в [metrics.md](metrics.md#форма-объектов).
+
+## 5. 2D-детектирование
+
+Качество первого звена — 2D-детектора на панораме — считается по тем же тестовым видам
+против COCO-разметки генератора (`coco/test.json`). Срабатывания одинаковы у всех
+конфигураций: детектор общий, оптимизация отношений 2D-рамки не меняет. Поэтому
+достаточно выгрузить их из вывода одной конфигурации:
+
+```bash
+cd $DPC
+PYTHONPATH=. conda run -n Pano3D python $TBX/scripts/dpc/dpc_export_detections.py \
+    $EXP/eval/manifest_pred_im3d.jsonl $EXP/eval/detections_im3d.jsonl \
+    --repo $DPC --pred-root out/pano3d_front3d_im3d
+pano3dbench detect2d --coco $EXP/coco/test.json \
+    --detections $EXP/eval/detections_im3d.jsonl \
+    --manifest $EXP/eval/manifest_pred_im3d.jsonl --output artifacts/detector_2d_front3d
+```
+
+Учёт шва и смысл чисел — в [metrics.md](metrics.md#2d-детектирование-на-панораме-pano3dbench-detect2d).
+
+## 6. Рамки на панораме
+
+Эталон и предсказания любой конфигурации можно нарисовать поверх панорам тестовой части:
+
+```bash
+pano3dbench draw --manifest $EXP/eval/manifest_pred_dpc.jsonl --predictions $EXP/eval/pred_dpc \
+    --output artifacts/overlay_dpc --limit 20
+```
+
+Устройство и параметры — в [visualization.md](visualization.md).
